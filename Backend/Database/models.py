@@ -404,22 +404,42 @@ class Job(Base, ReprAble):
                   info={'description': {
                       'en': 'Job Name',
                       'vn': 'Tên công việc'
-                  }})
+                  },
+                  'updateable':
+                  [
+                      RoleStates.ADMIN.name,
+                      RoleStates.JOB_MANAGER.name
+                  ]})
     description = Column(String(length=STRING_LENGTH), nullable=False,
                          info={'description': {
                              'en': 'Job Description',
                              'vn': 'Mô tả công việc'
-                         }})
+                         },
+                  'updateable':
+                  [
+                      RoleStates.ADMIN.name,
+                      RoleStates.JOB_MANAGER.name
+                  ]})
     pay = Column(String(length=STRING_LENGTH), nullable=False,
                  info={'description': {
                      'en': 'Job Pay',
                      'vn': 'Mức lương công việc'
-                 }})
+                 },
+                  'updateable':
+                  [
+                      RoleStates.ADMIN.name,
+                      RoleStates.JOB_MANAGER.name
+                  ]})
     requirement = Column(String(length=STRING_LENGTH), nullable=False,
                          info={'description': {
                              'en': 'Job Requirement',
                              'vn': 'Yêu cầu công việc'
-                         }})
+                         },
+                  'updateable':
+                  [
+                      RoleStates.ADMIN.name,
+                      RoleStates.JOB_MANAGER.name
+                  ]})
 
     # n-1 relationships
     job_status_id = Column(Integer, ForeignKey(
@@ -427,7 +447,12 @@ class Job(Base, ReprAble):
         info={'description': {
             'en': 'Job Status',
             'vn': 'Trạng thái công việc'
-        }})
+        },
+                  'updateable':
+                  [
+                      RoleStates.ADMIN.name,
+                      RoleStates.JOB_MANAGER.name
+                  ]})
     job_status = relationship('JobStatus', back_populates='jobs')
 
 
@@ -436,45 +461,104 @@ class InterviewerAssignment(Base, ReprAble):
         'description': {
             'en': 'Interviewer assignment',
             'vi': 'Giao phỏng vấn'
+        },
+        'permission':
+        {
+            # Permission at List page
+            'create':
+            [
+                RoleStates.ADMIN.name,
+                RoleStates.JOB_MANAGER.name
+            ],
+            'read':
+            [
+                RoleStates.ADMIN.name,
+                RoleStates.JOB_MANAGER.name
+            ],
+            'update':
+            [
+                RoleStates.ADMIN.name,
+                RoleStates.JOB_MANAGER.name
+            ],
+            'delete':
+            [
+                RoleStates.ADMIN.name,
+                RoleStates.JOB_MANAGER.name
+            ]
         }
     }
     __tablename__ = 'interviewer_assignments'
     id = Column(Integer, primary_key=True)
     interview_location = Column(String(length=STRING_LENGTH),
+                                nullable=False,
                                 info={'description': {
                                     'en': 'Interview Location',
                                     'vn': 'Địa điểm phỏng vấn'
-                                }})
+                                },
+                          "updateable":
+                          [
+                              RoleStates.ADMIN.name,
+                              RoleStates.JOB_MANAGER.name,
+                      ]})
     interview_datetime = Column(DateTime,
+                                nullable=False,
                                 info={'description': {
                                     'en': 'Interview Datetime',
                                     'vn': 'Thời điểm phỏng vấn'
-                                }})
+                                },
+                          "updateable":
+                          [
+                              RoleStates.ADMIN.name,
+                              RoleStates.JOB_MANAGER.name,
+                      ]})
     note = Column(String(length=STRING_LENGTH),
                   info={'description': {
                       'en': 'Interview Note',
                       'vn': 'Ghi chú phỏng vấn'
-                  }})
+                  },
+                          "updateable":
+                          [
+                              RoleStates.ADMIN.name,
+                              RoleStates.JOB_MANAGER.name,
+                      ]})
     # n-1 Relationships
     interviewer_id = Column(Integer, ForeignKey('interviewers.id'),
+                            nullable=False,
                             info={'description': {
                                 'en': 'Interviewer',
                                 'vn': 'Nhân viên phỏng vấn'
-                            }})
+                            },
+                          "updateable":
+                          [
+                              RoleStates.ADMIN.name,
+                              RoleStates.JOB_MANAGER.name,
+                      ]})
     interviewer = relationship(
         "Interviewer", back_populates="interviewer_assignments")
     job_manager_id = Column(Integer, ForeignKey('job_managers.id'),
+                            nullable=False,
                             info={'description': {
                                 'en': 'Job Manager',
                                 'vn': 'Người quản lý công việc'
-                            }})
+                            },
+                          "updateable":
+                          [
+                              RoleStates.ADMIN.name,
+                              RoleStates.JOB_MANAGER.name,
+                      ]})
     job_manager = relationship(
         "JobManager", back_populates="interviewer_assignments")
     candidate_id = Column(Integer, ForeignKey('candidates.id'),
+                          nullable=False,
                           info={'description': {
                               'en': 'Candidate',
                               'vn': 'Ứng viên'
-                          }})
+                          },
+                          "updateable":
+                          [
+                              RoleStates.ADMIN.name,
+                              RoleStates.JOB_MANAGER.name,
+                      ]})
     candidate = relationship(
         "Candidate", back_populates="interviewer_assignments")
 

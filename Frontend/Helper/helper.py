@@ -635,10 +635,14 @@ class Widget_Database_Table(QWidget):
 
                     # Fetch the corresponding instance using the foreign key value
                     related_instance = session.query(related_model_class).filter_by(id=foreign_key_value).first()
-                    if related_instance:
-                        item_text = str(related_instance.name)
+                    if str(related_model_class) in ['interviewers', 'job_managers', 'candidates']:
+                        status, user = CRUD_User.read(id=related_instance.id)
+                        item_text = str(user.name)
                     else:
-                        item_text = ''
+                        if related_instance:
+                            item_text = str(related_instance.name)
+                        else:
+                            item_text = ''
 
                 else:
                     attr = getattr(instance, column.name)
@@ -720,6 +724,8 @@ class Widget_ReadUpdateDelete(QWidget):
         # Create a container widget to hold the layout
         container_widget = QWidget(self)
         container_layout = QVBoxLayout(container_widget)
+
+        hide_columns = ['password_hash', 'username']
         # Get the mapped class and its properties using inspect
         mapper = inspect(self.model)
         for column in mapper.columns:
@@ -728,6 +734,8 @@ class Widget_ReadUpdateDelete(QWidget):
                 continue
             # Skip 'hide' column
             if isThisColumnHideToMe(column=column, my_role=my_role):
+                continue
+            if column.name in hide_columns:
                 continue
             # Get translated description of the column
             description = column.info.get(
@@ -749,8 +757,12 @@ class Widget_ReadUpdateDelete(QWidget):
                     foreign_key_value = getattr(self.obj, column.name, None)
 
                     # Fetch the corresponding instance using the foreign key value
-                    related_instance = session.query(related_model_class).filter_by(id=foreign_key_value).first()
-                    label_value_text = str(related_instance.name)
+                    instance = session.query(related_model_class).filter_by(id=foreign_key_value).first()
+                    if str(related_model_class) in ['interviewers', 'job_managers', 'candidates']:
+                        status, user = CRUD_User.read(id=instance.id)
+                        label_value_text = str(user.name)
+                    else:
+                        label_value_text = str(instance.name)
                 else:
                     attr = getattr(self.obj, column.name, None)
                     label_value_text = str(attr)
@@ -783,25 +795,28 @@ class Widget_ReadUpdateDelete(QWidget):
             else:
                 # Check if the column is a foreign key
                 if column.foreign_keys:
-                    print(column.foreign_keys)
-
                     combobox = QComboBox(self)
                     # Add a "None" option as the first item
                     combobox.addItem("None", None)
                     # Get the class of the related model
-                    related_model_class = list(column.foreign_keys)[0].column.table
+                    related_model = list(column.foreign_keys)[0].column.table
                     # Get the foreign key value
                     foreign_key_value = getattr(self.obj, column.name, None)
 
                     # Fetch the corresponding instance using the foreign key value
-                    related_instances = session.query(related_model_class).all()
-                    for related_instance in related_instances:
-                        combobox.addItem(related_instance.name, related_instance.id)
-
+                    related_instances = session.query(related_model).all()
+                    for instance in related_instances:
+                        if str(related_model) in ['interviewers', 'job_managers', 'candidates']:
+                            status, user = CRUD_User.read(id=instance.id)
+                            item_text = str(user.name)
+                        else:
+                            item_text = str(instance.name)
+                        combobox.addItem(item_text, instance.id)
+                    
                     current_value = getattr(self.obj, column.name, None)
                     index = combobox.findData(current_value)
                     combobox.setCurrentIndex(index)
-                    combobox.setDisabled(is_not_updateable)
+
                     self.comboboxes[column.name] = combobox
                     container_layout.addWidget(combobox)
                 else:
@@ -1015,7 +1030,6 @@ class Widget_SelfUpdate(QWidget):
             else:
                 # Check if the column is a foreign key
                 if column.foreign_keys:
-                    print(column.foreign_keys)
 
                     combobox = QComboBox(self)
                     # Add a "None" option as the first item
@@ -1169,12 +1183,18 @@ class Widget_Create(QWidget):
                         # Add a "None" option as the first item
                         combobox.addItem("None", None)
                         # Add all instances
-                        related_model = list(column.foreign_keys)[
-                            0].column.table
+                        related_model = list(column.foreign_keys)[0].column.table
+
                         related_instances = session.query(related_model).all()
 
                         for instance in related_instances:
-                            combobox.addItem(str(instance), instance.id)
+                            
+                            if str(related_model) in ['interviewers', 'job_managers', 'candidates']:
+                                status, user = CRUD_User.read(id=instance.id)
+                                
+                                combobox.addItem(str(user.name), instance.id)
+                            else:
+                                combobox.addItem(str(instance.name), instance.id)
 
                         self.comboboxes[column.name] = combobox
                         container_layout.addWidget(combobox)

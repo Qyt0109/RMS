@@ -218,12 +218,12 @@ class MyApplication(QMainWindow):
     def renderAdmin(self):
         """ Sidemenu """
         sidemenu_action_button_setups = [
-            ["Home", icon_home_path, self.toPage_Home],
-            ["Database", icon_database_path, self.toPage_Database],
+            [get_translation('home'), icon_home_path, self.toPage_Home],
+            [get_translation('database'), icon_database_path, self.toPage_Database],
         ]
         """ HOME """
         home_action_button_setups = [
-            [f"Database ({len(all_models)})", icon_database_path, self.toPage_Database]
+            [f"Database\n({len(all_models)})", icon_database_path, self.toPage_Database]
         ]
         self.renderBase(sidemenu_action_button_setups=sidemenu_action_button_setups,
                         home_action_button_setups=home_action_button_setups)
@@ -239,7 +239,10 @@ class MyApplication(QMainWindow):
         sidemenu_action_button_setups = [
             [get_translation('home'), icon_home_path, self.toPage_Home],
             # [get_translation('database'), icon_database_path, self.toPage_Database],
-            [get_translation('candidate'), icon_user_path, partial(self.toPage_Database_Table, model=Candidate)]
+            [get_translation('candidate'), icon_user_path, partial(self.toPage_Database_Table, model=Candidate)],
+            [Job.info['description'][LANGUAGE], icon_job_path, partial(self.toPage_Database_Table, model=Job)],
+            [Interviewer.info['description'][LANGUAGE], icon_interviewer_path, partial(self.toPage_Database_Table, model=Interviewer)],
+            [InterviewerAssignment.info['description'][LANGUAGE], icon_interviewer_asignment_path, partial(self.toPage_Database_Table, model=InterviewerAssignment)],
         ]
         """ HOME """
         status, candidates = CRUD_Candidate.read_all()
@@ -260,9 +263,8 @@ class MyApplication(QMainWindow):
     # endregion
         
     """ Page Settings """
-    def toPage_Settings(self):
+    def toPage_Settings(self, **kwargs):
         self.ui.stackedWidget.setCurrentWidget(self.ui.page_Settings)
-        pass
 
     def toPage_AccountSettings(self):
         self.ui.stackedWidget.setCurrentWidget(self.ui.page_Database)
@@ -273,9 +275,19 @@ class MyApplication(QMainWindow):
                                                 obj=self.logged_in_user.state,
                                                 callback_back=self.toPage_Settings,
                                                 callback_cancel=self.toPage_Settings,
-                                                callback_update=self.toPage_Settings)
+                                                callback_update=self.selfAccountUpdate)
 
         parent_layout.addWidget(widget_update)
+
+    def selfAccountUpdate(self, obj, **kwargs):
+        model = type(obj)
+        CRUD_Model = get_crud_class(model_class=model)
+        status, result = CRUD_Model.update(id=obj.id,
+                                           **kwargs)
+        print(status, result)
+        if status != CRUD_Status.UPDATED:
+            return
+        self.toPage_Settings()
     """ Page ChangePassword """
 
     def toPage_ChangePassword(self):
@@ -354,27 +366,6 @@ class MyApplication(QMainWindow):
 
         pass
 
-    """ Page MainMenu Admin """
-
-    """ Page MainMenu Candidate """
-
-    def toPage_MainMenu_Candidate(self):
-        self.ui.stackedWidget.setCurrentWidget(self.ui.page_MainMenu_Candidate)
-    """ Page MainMenu Candidate """
-
-    """ Page MainMenu Interviewer """
-
-    def toPage_MainMenu_Interviewer(self):
-        self.ui.stackedWidget.setCurrentWidget(
-            self.ui.page_MainMenu_Interviewer)
-    """ Page MainMenu Interviewer """
-
-    """ Page MainMenu JobManager """
-
-    def toPage_MainMenu_JobManager(self):
-        self.ui.stackedWidget.setCurrentWidget(
-            self.ui.page_MainMenu_JobManager)
-    """ Page MainMenu JobManager """
 
     """ Page Database """
 

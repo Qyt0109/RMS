@@ -1,0 +1,44 @@
+CREATE TABLE users (
+        `UserID` INTEGER NOT NULL AUTO_INCREMENT, 
+        `Username` VARCHAR(256) NOT NULL, 
+        `Password` VARCHAR(256) NOT NULL, 
+        `Role` VARCHAR(256) NOT NULL, 
+        `CommonField1` VARCHAR(256), 
+        `CommonField2` VARCHAR(256), 
+        PRIMARY KEY (`UserID`), 
+        UNIQUE (`Username`)
+)
+
+CREATE TABLE candidates (
+        `CandidateID` INTEGER NOT NULL, 
+        `AdditionalField1` VARCHAR(256), 
+        `AdditionalField2` VARCHAR(256), 
+        PRIMARY KEY (`CandidateID`), 
+        FOREIGN KEY(`CandidateID`) REFERENCES users (`UserID`)
+)
+
+CREATE TABLE interviewers (
+        `InterviewerID` INTEGER NOT NULL, 
+        `AdditionalField1` VARCHAR(256), 
+        `AdditionalField2` VARCHAR(256), 
+        PRIMARY KEY (`InterviewerID`), 
+        FOREIGN KEY(`InterviewerID`) REFERENCES users (`UserID`)
+)
+
+CREATE TABLE job_managers (
+        `JobManagerID` INTEGER NOT NULL, 
+        `AdditionalField1` VARCHAR(256), 
+        `AdditionalField2` VARCHAR(256), 
+        PRIMARY KEY (`JobManagerID`), 
+        FOREIGN KEY(`JobManagerID`) REFERENCES users (`UserID`)
+)
+
+INSERT INTO users (`Username`, `Password`, `Role`, `CommonField1`, `CommonField2`) VALUES (%(Username)s, %(Password)s, %(Role)s, %(CommonField1)s, %(CommonField2)s)
+INSERT INTO candidates (`CandidateID`, `AdditionalField1`, `AdditionalField2`) VALUES (%(CandidateID)s, %(AdditionalField1)s, %(AdditionalField2)s)
+
+SELECT users.`UserID` AS `users_UserID`, users.`Username` AS `users_Username`, users.`Password` AS `users_Password`, users.`Role` AS `users_Role`, users.`CommonField1` AS `users_CommonField1`, users.`CommonField2` AS `users_CommonField2` 
+FROM users
+
+SELECT users.`UserID` AS `users_UserID`, users.`Username` AS `users_Username`, users.`Password` AS `users_Password`, users.`Role` AS `users_Role`, users.`CommonField1` AS `users_CommonField1`, users.`CommonField2` AS `users_CommonField2`, candidates.`CandidateID` AS `candidates_CandidateID`, candidates.`AdditionalField1` AS `candidates_AdditionalField1`, candidates.`AdditionalField2` AS `candidates_AdditionalField2` 
+FROM users INNER JOIN candidates ON users.`UserID` = candidates.`CandidateID`
+

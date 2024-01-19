@@ -1,7 +1,7 @@
 from enum import EnumMeta
 from typing import Callable, List, Tuple
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, or_
 
 from Backend.Database.password import db_password
 from Backend.Database.models import *
@@ -21,7 +21,7 @@ else:
     db_ssl_ca_path = '/etc/ssl/cert.pem'
 db_password = db_password
 
-ECHO = False
+ECHO = True
 TEST = True
 
 connection_url_string = f"{db_type}+{db_connector_module}://{db_username}:{db_password}@{db_host}:{db_port}/test?ssl_ca={db_ssl_ca_path}&ssl_verify_cert=true&ssl_verify_identity=true"
@@ -103,6 +103,22 @@ class CRUD_Base:
         if not found_instance:
             return CRUD_Status.NOT_FOUND, None
         return CRUD_Status.FOUND, found_instance
+    
+    @classmethod
+    @read_handler_wrapper
+    def read_by_filter(cls, **kwargs) -> Tuple[CRUD_Status, List[any]]:
+        filters = []
+        for key, value in kwargs.items():
+            if isinstance(value, str):
+                filters.append(cls.model.__dict__[key].ilike(f"%{value}%"))
+            else:
+                filters.append(cls.model.__dict__[key] == value)
+
+        found_instances = session.query(cls.model).filter(or_(*filters)).all()
+
+        if not found_instances:
+            return CRUD_Status.NOT_FOUND, []
+        return CRUD_Status.FOUND, found_instances
 
     @classmethod
     @read_handler_wrapper

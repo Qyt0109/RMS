@@ -191,7 +191,9 @@ class User(Base, ReprAble):
                         "updateable":
                         [
                         RoleStates.ADMIN.name
-                    ]})
+                    ],
+                    'filetype':'png'
+                    })
     # created_time = Column(DateTime, default=datetime.now())
 
     # n-1 relationships
@@ -383,7 +385,8 @@ class Job(Base, ReprAble):
             [
                 RoleStates.ADMIN.name,
                 RoleStates.JOB_MANAGER.name,
-                RoleStates.INTERVIEWER.name
+                RoleStates.INTERVIEWER.name,
+                RoleStates.CANDIDATE.name
             ],
             'update':
             [
@@ -440,6 +443,9 @@ class Job(Base, ReprAble):
                       RoleStates.ADMIN.name,
                       RoleStates.JOB_MANAGER.name
                   ]})
+    # 1-n relationships
+    application_forms = relationship('ApplicationForm', back_populates='job')
+
 
     # n-1 relationships
     job_status_id = Column(Integer, ForeignKey(
@@ -564,15 +570,74 @@ class InterviewerAssignment(Base, ReprAble):
 
 
 class ApplicationForm(Base, ReprAble):
+    info = {
+        'description': {
+            'en': 'Application form',
+            'vi': 'Đơn ứng tuyển'
+        },
+        'permission':
+        {
+            # Permission at List page
+            'create':
+            [
+                RoleStates.ADMIN.name,
+                RoleStates.CANDIDATE.name
+            ],
+            'read':
+            [
+                RoleStates.ADMIN.name,
+                RoleStates.JOB_MANAGER.name,
+                RoleStates.CANDIDATE.name
+            ],
+            'update':
+            [
+                RoleStates.ADMIN.name,
+                RoleStates.JOB_MANAGER.name,
+                RoleStates.CANDIDATE.name
+            ],
+            'delete':
+            [
+                RoleStates.ADMIN.name,
+                RoleStates.CANDIDATE.name
+            ]
+        }
+    }
     __tablename__ = 'application_forms'
     id = Column(Integer, primary_key=True)
+    cv = Column(LargeBinary,
+                info=
+                {
+                    'description':
+                    {
+                        'en': 'CV',
+                        'vn': 'CV'
+                    },
+                    'filetype':'pdf',
+                    'updateable':
+                    [
+                        RoleStates.ADMIN.name,
+                        RoleStates.CANDIDATE.name
+                    ]
+                })
     # n-1 relationships
     candidate_id = Column(Integer, ForeignKey('candidates.id'),
+                          nullable=False,
                           info={'description': {
                               'en': 'Candidate',
                               'vn': 'Ứng viên'
-                          }})
+                          },
+                          'hide':
+                          [
+                              RoleStates.CANDIDATE.name
+                          ]})
     candidate = relationship("Candidate", back_populates="application_forms")
+    job_id = Column(Integer, ForeignKey('jobs.id'),
+                    nullable=False,
+                          info={'description': {
+                              'en': 'Apply to job',
+                              'vn': 'Vị trí ứng tuyển'
+                          }})
+    job = relationship("Job", back_populates="application_forms")
 
 
 class Requisition(Base, ReprAble):
@@ -636,8 +701,3 @@ class RequisitionStatus(Base, ReprAble):
 all_models = [obj for obj in globals().values() if isinstance(
     obj, type) and issubclass(obj, Base) and obj != Base]
 
-
-
-
-admin = Admin(id=10, username='admin123123', password_hash='123123')
-print(str(admin))

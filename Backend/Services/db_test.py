@@ -4,9 +4,9 @@ from Backend.Database.sessions import *
 def initTestDatabase():
     CRUD_Gender.create(name="Male")
     CRUD_Gender.create(name="Female")
-    CRUD_JobStatus.create(name="Status +")
-    CRUD_JobStatus.create(name="Status -")
-    CRUD_JobStatus.create(name="Status x")
+    CRUD_JobStatus.create(name="Hiring")
+    CRUD_JobStatus.create(name="Not available")
+    CRUD_JobStatus.create(name="Closed")
     for i in range(1, 6):
         status, result = CRUD_Admin.create(username=f"admin{i}",
                                            password="admin",
@@ -15,8 +15,8 @@ def initTestDatabase():
                                            # admin_col=f"Test admin {i}",
                                            name=f"Admin Number {i}",
                                            gender_id=1)
-        # print(status)
-        # print(result)
+        print(status)
+        print(result)
 
         status, result = CRUD_Candidate.create(username=f"candidate{i}",
                                                password="candidate",
@@ -31,8 +31,8 @@ def initTestDatabase():
                                                academic_level=f"academic level {i}",
                                                experience=f"Test {i}",
                                                degree=f"Good {i}")
-        # print(status)
-        # print(result)
+        print(status)
+        print(result)
 
         status, result = CRUD_Interviewer.create(username=f"interviewer{i}",
                                                  password="interviewer",
@@ -41,8 +41,8 @@ def initTestDatabase():
                                                  # interviewer_col=f"Test interviewer {i}",
                                                  name=f"Interviewer Number {i}",
                                                  gender_id=2)
-        # print(status)
-        # print(result)
+        print(status)
+        print(result)
 
         status, result = CRUD_JobManager.create(username=f"job_manager{i}",
                                                 password="job_manager",
@@ -51,8 +51,8 @@ def initTestDatabase():
                                                 # job_manager_col=f"Test job_manager {i}",
                                                 name=f"Job Manager Number {i}",
                                                 gender_id=2)
-        # print(status)
-        # print(result)
+        print(status)
+        print(result)
 
         status, result = CRUD_Job.create(name=f"Job {i}",
                                          description=f"This is job {i}'s description...",

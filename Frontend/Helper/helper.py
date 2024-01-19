@@ -193,7 +193,8 @@ icon_delete_path = "Frontend/Resources/Bootstrap/trash3.png"
 icon_logout_path = "Frontend/Resources/Bootstrap/box-arrow-left.png"
 icon_database_path = "Frontend/Resources/Bootstrap/database-fill.png"
 icon_settings_path = "Frontend/Resources/Bootstrap/gear-fill.png"
-
+icon_select_path = "Frontend/Resources/Bootstrap/arrow-right.png"
+icon_application_form_path = "Frontend/Resources/Bootstrap/envelope-paper.png"
 
 class RoundButton(QPushButton):
     def __init__(self, icon_path, parent=None):
@@ -278,101 +279,6 @@ def setTableWidgetCell(table: QTableWidget, widget: QWidget, row, col):
 def setTableResizeMode(table: QTableWidget, resize_modes: List[QHeaderView.ResizeMode]):
     for col, resize_mode in enumerate(resize_modes):
         table.horizontalHeader().setSectionResizeMode(col, resize_mode)
-
-
-def renderView_List_AddUser(parent_frame: QFrame, callback=None):
-    parent_layout = parent_frame.layout()
-    clearLayoutWidgets(layout=parent_layout)
-
-    frame_add = QFrame(parent_frame)
-    layout_add = QVBoxLayout(frame_add)
-
-
-class Table_ListUsers(QTableWidget):
-    def __init__(self, users: List[User], **kwargs):
-        super().__init__()
-        header_labels = ['Tài khoản', 'Chức vụ', 'Tên',
-                         'Giới tính', 'Ngày sinh', 'Chức năng']
-        resize_modes = [
-            QHeaderView.ResizeMode.ResizeToContents,
-            QHeaderView.ResizeMode.Stretch,
-            QHeaderView.ResizeMode.Stretch,
-            QHeaderView.ResizeMode.Stretch,
-            QHeaderView.ResizeMode.Stretch,
-            QHeaderView.ResizeMode.ResizeToContents
-        ]
-        col_count = len(header_labels)
-        self.setColumnCount(col_count)
-        self.setHorizontalHeaderLabels(header_labels)
-        row_count = len(users)
-        self.setRowCount(row_count)
-        for col, resize_mode in enumerate(resize_modes):
-            self.horizontalHeader().setSectionResizeMode(col, resize_mode)
-        # Fill the table
-        for row, user in enumerate(users):
-            items: List[str | None] = [
-                user.username,
-                RoleStates[user.role].value,
-                user.name,
-                user.gender.name,
-                to_ddmmYYYY_str(user.birthday)
-                # Placeholder for action buttons
-            ]
-            for col, item in enumerate(items):
-                setTableTextCell(table=self,
-                                 text=item if item else '',
-                                 row=row,
-                                 col=col)
-            # Last column for action buttons
-            button_widget = QWidget()
-            button_layout = QHBoxLayout(button_widget)
-            button_layout.setSpacing(0)
-            button_layout.setContentsMargins(0, 0, 0, 0)
-
-            pushButton_Detail = ActionButton(icon_path=icon_show_path,
-                                             stylesheet_normal="background-color: rgba(0, 0, 255, 80);",
-                                             stylesheet_hover="background-color: rgba(0, 0, 255, 140);")
-
-            if 'callback_detail' in kwargs:
-                callback_detail = kwargs['callback_detail']
-                pushButton_Detail.clicked.connect(
-                    partial(callback_detail, user=user))
-
-            pushButton_Update = ActionButton(icon_path=icon_edit_path,
-                                             stylesheet_normal="background-color: rgba(255, 255, 0, 80);",
-                                             stylesheet_hover="background-color: rgba(255, 255, 0, 140);")
-
-            if 'callback_update' in kwargs:
-                callback_update = kwargs['callback_update']
-                pushButton_Update.clicked.connect(
-                    partial(callback_update, user=user))
-
-            pushButton_Delete = ActionButton(icon_path=icon_delete_path,
-                                             stylesheet_normal="background-color: rgba(255, 0, 0, 80);",
-                                             stylesheet_hover="background-color: rgba(255, 0, 0, 140);")
-
-            if 'callback_delete' in kwargs:
-                callback_delete = kwargs['callback_delete']
-                pushButton_Delete.clicked.connect(
-                    partial(callback_delete, user=user))
-            button_layout.addWidget(pushButton_Detail)
-            button_layout.addWidget(pushButton_Update)
-            button_layout.addWidget(pushButton_Delete)
-            self.setCellWidget(row, col_count - 1, button_widget)
-
-        self.resizeColumnsToContents()
-        self.resizeRowsToContents()
-        self.setSortingEnabled(True)
-
-
-def renderView_List_Users(parent_frame: QFrame, users: List[User], **kwargs):
-    parent_layout = parent_frame.layout()
-    clearLayoutWidgets(layout=parent_layout)
-    frame_list = QFrame(parent_frame)
-    layout_list = QVBoxLayout(frame_list)
-    table_list = Table_ListUsers(users=users, **kwargs)
-    layout_list.addWidget(table_list)
-    parent_layout.addWidget(frame_list)
 
 
 class Widget_Database(QWidget):
@@ -500,8 +406,17 @@ class Widget_Database_Table(QWidget):
         self.table_widget.setColumnCount(column_count)
         self.table_widget.setHorizontalHeaderLabels(header_labels)
 
+        # Retrieve all instances of the model from the database
+        CRUD_Class = get_crud_class(model_class=self.model)
+        status, instances = CRUD_Class.read_all()
+
+        if status != CRUD_Status.FOUND:
+            instances = []
+
         # Populate the table with data
-        self.populate_table()
+        populate_table(table_widget=self.table_widget,
+                       instances=instances,
+                       model=self.model)
 
         # Add buttons to the last column for each row
         for row in range(self.table_widget.rowCount()):
@@ -598,6 +513,7 @@ class Widget_Database_Table(QWidget):
             return
         self.callback_create(model=self.model)
 
+    """
     def populate_table(self):
         # Retrieve all instances of the model from the database
         CRUD_Class = get_crud_class(model_class=self.model)
@@ -619,11 +535,11 @@ class Widget_Database_Table(QWidget):
         for row, instance in enumerate(instances):
 
             for col, column in enumerate(table_columns):
-                """
-                if column.primary_key:
+
+                #if column.primary_key:
                     # If the column is the primary key, use the value directly
-                    item_text = str(getattr(instance, column.name))
-                """
+                #    item_text = str(getattr(instance, column.name))
+
                 if column.primary_key:
                     # If the column is the primary key, use the value directly
                     item_text = str(getattr(instance, column.name))
@@ -653,6 +569,270 @@ class Widget_Database_Table(QWidget):
 
                 item = QTableWidgetItem(item_text)
                 self.table_widget.setItem(row, col, item)
+    """
+
+
+class Widget_Database_Table_Instances(QWidget):
+    def __init__(self,
+                 parent: QWidget,
+                 instances,
+                 model,
+                 my_role=None,
+                 callback_back=None,
+                 callback_create=None,
+                 callback_read=None,
+                 callback_select=None,
+                 callback_update=None,
+                 callback_delete=None) -> None:
+        super().__init__(parent)
+        self.callback_back = callback_back
+        self.callback_create = callback_create
+        self.callback_read = callback_read
+        self.callback_select = callback_select
+        self.callback_update = callback_update
+        self.callback_delete = callback_delete
+        self.layout = QVBoxLayout(self)
+        self.instances = instances
+        self.model = model
+
+        # """ Check if model is subclass of User but not the class User itself
+        self.is_user_subclass = issubclass(model, User) and model is not User
+        # """
+
+        """ Check if model operand permission with my role """
+        check_model = self.model
+        if self.is_user_subclass:
+            check_model = User
+        is_create = isPermissionToMe(model=check_model,
+                                   my_role=my_role,
+                                   operand='create')
+        is_read = isPermissionToMe(model=check_model,
+                                   my_role=my_role,
+                                   operand='read')
+        is_update = isPermissionToMe(model=check_model,
+                                   my_role=my_role,
+                                   operand='update')
+        is_delete = isPermissionToMe(model=check_model,
+                                   my_role=my_role,
+                                   operand='delete')
+
+        frame_buttons = QFrame(self)
+        frame_buttons_layout = QHBoxLayout(frame_buttons)
+        # Set layout alignment to the left
+        frame_buttons_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        pushButton_Back = ActionButton(
+            parent=self, text=get_translation(key='back'))
+        pushButton_Back.clicked.connect(partial(self.back_button_clicked))
+        frame_buttons_layout.addWidget(pushButton_Back)
+        if is_create:
+            pushButton_Create = ActionButton(
+                parent=self, text=get_translation(key='add'))
+            pushButton_Create.clicked.connect(partial(self.create_button_clicked))
+            frame_buttons_layout.addWidget(pushButton_Create)
+        self.layout.addWidget(frame_buttons)
+
+        # Create a QTableWidget to display data
+        self.table_widget = QTableWidget(self)
+
+        header_labels = []
+        table_columns = []
+        column_count = 0
+
+        hide_columns = []
+
+        if self.is_user_subclass:
+            table_columns += list(User.__table__.columns)
+
+        # Set up the table headers based on model attributes
+        table_columns += list(model.__table__.columns)
+
+        for table_column in table_columns:
+            if isThisColumnHideToMe(column=table_column, my_role=my_role):
+                hide_columns.append(table_column.info.get('description', {}).get(
+                                    LANGUAGE, table_column.name))
+
+        # +1 for the extra action buttons column
+        column_count += len(table_columns) + 1
+
+        # Get the Database's table column descriptions for the headers
+        header_labels += [column.info.get('description', {}).get(
+            LANGUAGE, column.name) for column in table_columns]
+
+        # Add an extra column for functionality
+        header_labels += [get_translation(key='action_button')]
+
+        # Set the horizontal header labels for the QTableWidget
+        self.table_widget.setColumnCount(column_count)
+        self.table_widget.setHorizontalHeaderLabels(header_labels)
+
+        # Populate the table with data
+        populate_table(table_widget=self.table_widget,
+                       instances=self.instances,
+                       model=self.model)
+
+        # Add buttons to the last column for each row
+        for row in range(self.table_widget.rowCount()):
+            button_frame = QWidget(self)
+            button_layout = QHBoxLayout(button_frame)
+            if is_read:
+                read_button = ActionButton(parent=self,
+                                        icon_path=icon_show_path,
+                                        stylesheet_normal="background-color: rgba(0, 0, 255, 80);",
+                                        stylesheet_hover="background-color: rgba(0, 0, 255, 140);")
+
+                read_button.clicked.connect(
+                    partial(self.read_button_clicked,
+                            id=get_id_for_row(table_widget=self.table_widget,
+                                            row=row)))
+                button_layout.addWidget(read_button)
+            if is_update:
+                update_button = ActionButton(parent=self,
+                                                icon_path=icon_edit_path,
+                                                stylesheet_normal="background-color: rgba(255, 255, 0, 80);",
+                                                stylesheet_hover="background-color: rgba(255, 255, 0, 140);")
+                update_button.clicked.connect(
+                    partial(self.update_button_clicked,
+                            id=get_id_for_row(table_widget=self.table_widget,
+                                                row=row)))
+                button_layout.addWidget(update_button)
+            if is_delete:
+                delete_button = ActionButton(icon_path=icon_delete_path,
+                                            stylesheet_normal="background-color: rgba(255, 0, 0, 80);",
+                                            stylesheet_hover="background-color: rgba(255, 0, 0, 140);")
+                delete_button.clicked.connect(
+                    partial(self.delete_button_clicked,
+                            id=get_id_for_row(table_widget=self.table_widget,
+                                            row=row)))
+                button_layout.addWidget(delete_button)
+            if self.callback_select:
+                select_button = ActionButton(parent=self,
+                                             icon_path=icon_select_path,
+                                             stylesheet_normal="background-color: rgba(0, 255, 0, 80);",
+                                        stylesheet_hover="background-color: rgba(0, 255, 0, 140);")
+                select_button.clicked.connect(
+                    partial(self.select_button_clicked,
+                            id=get_id_for_row(table_widget=self.table_widget,
+                                            row=row)))
+                button_layout.addWidget(select_button)
+            button_layout.setContentsMargins(0, 0, 0, 0)
+            button_layout.setSpacing(0)
+
+            self.table_widget.setCellWidget(row,
+                                            column_count - 1,  # Last column
+                                            button_frame)
+        self.table_widget.horizontalHeader().setSectionResizeMode(
+            0, QHeaderView.ResizeMode.ResizeToContents)
+        for col in range(1, column_count - 1):
+            # Col from 1 to column - 2
+            self.table_widget.horizontalHeader().setSectionResizeMode(
+                col, QHeaderView.ResizeMode.Stretch)
+        self.table_widget.horizontalHeader().setSectionResizeMode(
+            column_count - 1, QHeaderView.ResizeMode.ResizeToContents)
+
+        self.table_widget.setSortingEnabled(True)
+        self.table_widget.resizeColumnsToContents()
+        self.table_widget.resizeRowsToContents()
+
+        hide_columns.append('id')
+
+        hide_columns_by_header_labels(table_widget=self.table_widget,
+                                      header_labels=hide_columns)
+        
+        self.layout.addWidget(self.table_widget)
+
+    def select_button_clicked(self, id):
+        if not self.callback_select:
+            return
+        status, obj = get_crud_class(self.model).read(id)
+        if status != CRUD_Status.FOUND:
+            return
+        self.callback_select(obj=obj, model=self.model)
+
+    def read_button_clicked(self, id):
+        if not self.callback_read:
+            return
+        status, obj = get_crud_class(self.model).read(id)
+        if status != CRUD_Status.FOUND:
+            return
+        self.callback_read(obj=obj, model=self.model)
+
+    def update_button_clicked(self, id):
+        if not self.callback_update:
+            return
+        status, obj = get_crud_class(self.model).read(id)
+        if status != CRUD_Status.FOUND:
+            return
+        self.callback_update(obj=obj, model=self.model)
+
+    def delete_button_clicked(self, id):
+        if not self.callback_delete:
+            return
+        status, obj = get_crud_class(self.model).read(id)
+
+        if status != CRUD_Status.FOUND:
+            return
+        self.callback_delete(obj=obj)
+
+    def back_button_clicked(self):
+        if not self.callback_back:
+            return
+        self.callback_back()
+
+    def create_button_clicked(self):
+        if not self.callback_create:
+            return
+        self.callback_create(model=self.model)
+
+def populate_table(table_widget:QTableWidget, instances:list, model):
+
+    # Set the number of rows in the table
+    table_widget.setRowCount(len(instances))
+
+    table_columns = []
+    is_user_subclass = issubclass(model, User) and model is not User
+    if is_user_subclass:
+        user_columns = getattr(User, '__table__', None).columns
+        if user_columns:
+            table_columns += list(user_columns)
+    table_columns += list(model.__table__.columns)
+    # Populate the table with data
+    for row, instance in enumerate(instances):
+
+        for col, column in enumerate(table_columns):
+            """
+            if column.primary_key:
+                # If the column is the primary key, use the value directly
+                item_text = str(getattr(instance, column.name))
+            """
+            if column.primary_key:
+                # If the column is the primary key, use the value directly
+                item_text = str(getattr(instance, column.name))
+            elif column.foreign_keys:
+                # Get the class of the related model
+                related_model_class = list(column.foreign_keys)[0].column.table
+                # Get the foreign key value
+                foreign_key_value = getattr(instance, column.name, None)
+
+                # Fetch the corresponding instance using the foreign key value
+                related_instance = session.query(related_model_class).filter_by(id=foreign_key_value).first()
+                if str(related_model_class) in ['interviewers', 'job_managers', 'candidates']:
+                    status, user = CRUD_User.read(id=related_instance.id)
+                    item_text = str(user.name)
+                else:
+                    if related_instance:
+                        item_text = str(related_instance.name)
+                    else:
+                        item_text = ''
+
+            else:
+                attr = getattr(instance, column.name)
+                if attr:
+                    item_text = str(attr)
+                else:
+                    item_text = ''
+
+            item = QTableWidgetItem(item_text)
+            table_widget.setItem(row, col, item)
 
 
 def hide_columns_by_header_labels(table_widget: QTableWidget, header_labels: list[str]):
@@ -740,10 +920,10 @@ class Widget_ReadUpdateDelete(QWidget):
             # Get translated description of the column
             description = column.info.get(
                 'description', {}).get(LANGUAGE, column.name)
-            if column.nullable:
-                label_name = QLabel(description, parent=self)
+            if column.nullable or not callback_update:
+                label_name = QLabel(f"{description}:", parent=self)
             else:
-                label_name = QLabel(f"{description} *", parent=self)
+                label_name = QLabel(f"{description} (*):", parent=self)
                 label_name.setStyleSheet("color: rgb(153, 0, 0)")
 
             container_layout.addWidget(label_name)
@@ -765,7 +945,7 @@ class Widget_ReadUpdateDelete(QWidget):
                         label_value_text = str(instance.name)
                 else:
                     attr = getattr(self.obj, column.name, None)
-                    label_value_text = str(attr)
+                    label_value_text = str(attr) if attr else ''
                 label_value = QLabel(label_value_text)
                 label_value.setStyleSheet("background-color:rgba(0, 0, 153, 30); padding: 5px 5px 5px 5ps;")
                 container_layout.addWidget(label_value)
@@ -1119,6 +1299,10 @@ class Widget_SelfUpdate(QWidget):
         else:
             return widget.text() if widget.text() != '' else None
 
+class Widget_Create_MyApplicationForm(QWidget):
+    def __init__(self, parent: QWidget, callback_back=None, callback_cancel=None, callback_create=None) -> None:
+        super().__init__(parent)
+        self.layout = QVBoxLayout(self)
 
 class Widget_Create(QWidget):
     def __init__(self, parent: QWidget, model: Base, callback_back=None, callback_cancel=None, callback_create=None) -> None:

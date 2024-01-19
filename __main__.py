@@ -172,8 +172,8 @@ class MyApplication(QMainWindow):
             self.toPage_Login()
     # endregion Login Logout
     # region renderview based on user role
-            
-    def getLoggedInUser(self)->User:
+
+    def getLoggedInUser(self) -> User:
         logged_in_user = self.logged_in_user.state
         return logged_in_user
 
@@ -201,7 +201,7 @@ class MyApplication(QMainWindow):
 
     def renderBase(self, sidemenu_action_button_setups, home_action_button_setups):
         """ Sidemenu """
-        sidemenu_action_button_setups.insert(0, 
+        sidemenu_action_button_setups.insert(0,
                                              [get_translation('home'), icon_home_path, self.toPage_Home])
         sidemenu_action_button_setups.append(
             [get_translation('settings'), icon_settings_path, self.toPage_Settings])
@@ -318,7 +318,6 @@ class MyApplication(QMainWindow):
             return
         application_forms = self.logged_in_user.state.application_forms
         return application_forms
-    
 
     def toPage_Candidate_ApplicationForms(self, **kwargs):
         self.ui.stackedWidget.setCurrentWidget(self.ui.page_Database)
@@ -336,21 +335,32 @@ class MyApplication(QMainWindow):
                                                        callback_read=self.toPage_Candidate_ApplicationForms_Read)
         parent_layout.addWidget(widget_table)
 
-    def toPage_Candidate_ApplicationForms_Read(self, obj, model, **kwargs):
+    def toPage_Candidate_ApplicationForms_Read(self, job, model, **kwargs):
         self.ui.stackedWidget.setCurrentWidget(self.ui.page_Database)
         parent = self.ui.page_Database
         parent_layout = parent.layout()
         clearAllWidgets(parent)
         widget_read = Widget_ReadUpdateDelete(parent=parent,
-                                              obj=obj,
+                                              job=job,
                                               model=model,
                                               my_role=self.logged_in_user.state.role,
                                               callback_back=self.toPage_Candidate_ApplicationForms)
 
         parent_layout.addWidget(widget_read)
 
-    def toPage_Candidate_ApplicationForms_Create(self, job):
-        pass
+    def toPage_Candidate_ApplicationForms_Create(self, job, **kwargs):
+        self.ui.stackedWidget.setCurrentWidget(self.ui.page_Database)
+        parent = self.ui.page_Database
+        parent_layout = parent.layout()
+        clearAllWidgets(parent)
+        widget_create = Widget_Create_MyApplicationForm(parent=parent,
+                                                        candidate_id=self.logged_in_user.state.id,
+                                                        job=job,
+                                                        callback_back=self.toPage_Candidate_ApplicationForms,
+                                                        callback_cancel=self.toPage_Candidate_ApplicationForms,
+                                                        callback_create=self.createData)
+
+        parent_layout.addWidget(widget_create)
 
         # print(obj, model)
 
@@ -589,15 +599,6 @@ class MyApplication(QMainWindow):
             return
         self.toPage_Database_Table(model=model)
     """ Page Database """
-
-
-def getAvaiableJobs(avaiable_job_id: int = 1):
-    """ Assuming Job instances with\n#### job_status_id=avaiable_job_id\nis avaiable for anyone """
-    status, instances = CRUD_Job.read_by_filter(job_status_id=avaiable_job_id)
-    print(status, instances)
-    if status != CRUD_Status.FOUND:
-        instances = []
-    return instances
 
 
 if __name__ == "__main__":

@@ -581,7 +581,7 @@ class ApplicationForm(Base, ReprAble):
             'create':
             [
                 RoleStates.ADMIN.name,
-                RoleStates.CANDIDATE.name
+                # RoleStates.CANDIDATE.name
             ],
             'read':
             [

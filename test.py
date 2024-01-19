@@ -1,33 +1,39 @@
-import sys
-from PyQt6.QtWidgets import QApplication, QPushButton, QWidget
-from PyQt6.QtGui import QPixmap, QPainter, QBitmap, QIcon
-from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import *
 
-class RoundButton(QPushButton):
-    def __init__(self, icon_path, parent=None):
+
+class Widget_SelectFilePath(QPushButton):
+    def __init__(self, parent: QWidget=None, text:str=None, icon_path:str=None, callback_on_selected=None) -> None:
         super().__init__(parent)
-        self.setIconSize(self.size())
-        self.setIcon(QIcon(icon_path))
-        self.setFixedSize(150, 150)  # Set the size of the button
-        self.setMask(self.createMask())
+        self.clicked.connect(self.on_select_file_path)
 
-    def createMask(self):
-        mask = QBitmap(self.size())
-        mask.fill(Qt.GlobalColor.white)
-        painter = QPainter(mask)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
-        painter.setBrush(Qt.GlobalColor.black)
-        painter.drawEllipse(0, 0, self.width(), self.height())
-        return mask
+    def on_select_file_path(self):
+        # Open a file dialog to get the save path
+        file_dialog = QFileDialog(self)
+        file_dialog.setDefaultSuffix('png')
+        file_path, _ = file_dialog.getSaveFileName(
+            self, 'Save As', '', 'Images (*.png)')
 
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = QWidget()
+        if not file_path:
+            return
+        print(file_path)
+        if callback_on_selected:
+            callback_on_selected(file_path = file_path)
+            # file_bytes = file_to_bytes(file_path)
+            # print(len(file_bytes))
 
-    # Replace 'your_icon_path.png' with the path to your image file
-    button = RoundButton('Frontend/Resources/Images/default-avatar.png', window)
+def file_to_bytes(file_path:str):
+    print(file_path)
+    return
+    with open(file_path, 'rb') as file:
+        file_bytes = file.read()
+    print(file_path)
+    return file_bytes
 
-    window.setGeometry(100, 100, 300, 200)
-    window.show()
+def run_app():
+    app = QApplication([])
+    main_win = Widget_SelectFilePath(text="Test select file", callback_on_selected=file_to_bytes)
+    main_win.show()
+    app.exec()
 
-    sys.exit(app.exec())
+if __name__ == '__main__':
+    run_app()

@@ -329,7 +329,7 @@ class MyApplication(QMainWindow):
                                                        instances=my_application_forms,
                                                        model=ApplicationForm,
                                                        my_role=self.logged_in_user.state.role,
-                                                       callback_update=self.updateData,
+                                                       callback_update=self.toPage_Database_Table_Update,
                                                        callback_back=self.toPage_Home,
                                                        callback_create=self.toPage_Candidate_ApplicationForms_Create,
                                                        callback_read=self.toPage_Candidate_ApplicationForms_Read)
@@ -344,7 +344,7 @@ class MyApplication(QMainWindow):
                                               obj=obj,
                                               model=model,
                                               my_role=self.logged_in_user.state.role,
-                                              callback_back=self.toPage_Candidate_Jobs_Read)
+                                              callback_back=self.toPage_Candidate_ApplicationForms)
 
         parent_layout.addWidget(widget_read)
 
@@ -357,7 +357,7 @@ class MyApplication(QMainWindow):
                                                         candidate_id=self.logged_in_user.state.id,
                                                         obj=obj,
                                                         callback_back=self.toPage_Candidate_Jobs,
-                                                        callback_cancel=self.toPage_Candidate_Jobs,
+                                                        callback_cancel=self.toPage_Candidate_ApplicationForms,
                                                         callback_create=self.createData)
 
         parent_layout.addWidget(widget_create)
@@ -492,7 +492,7 @@ class MyApplication(QMainWindow):
 
     """ Page Database """
 
-    def toPage_Database(self):
+    def toPage_Database(self, **kwargs):
         self.ui.stackedWidget.setCurrentWidget(self.ui.page_Database)
         parent = self.ui.page_Database
         parent_layout = parent.layout()
@@ -504,7 +504,7 @@ class MyApplication(QMainWindow):
                                           callback_select_table=self.toPage_Database_Table)
         parent_layout.addWidget(widget_database)
 
-    def toPage_Database_Table(self, model):
+    def toPage_Database_Table(self, model, **kwargs):
         self.ui.stackedWidget.setCurrentWidget(self.ui.page_Database)
         parent = self.ui.page_Database
         parent_layout = parent.layout()
@@ -525,10 +525,10 @@ class MyApplication(QMainWindow):
                                                        callback_delete=self.toPage_Database_Table_Delete)
         parent_layout.addWidget(widget_table)
 
-    def toPage_Database_Table_Delete(self, obj):
+    def toPage_Database_Table_Delete(self, obj, **kwargs):
         self.deleteData(obj)
 
-    def toPage_Database_Table_Update(self, obj, model):
+    def toPage_Database_Table_Update(self, obj, model, **kwargs):
         self.ui.stackedWidget.setCurrentWidget(self.ui.page_Database)
         parent = self.ui.page_Database
         parent_layout = parent.layout()
@@ -544,7 +544,7 @@ class MyApplication(QMainWindow):
 
         parent_layout.addWidget(widget_update)
 
-    def deleteData(self, obj):
+    def deleteData(self, obj, **kwargs):
         model = type(obj)
         CRUD_Model = get_crud_class(model_class=model)
         status, result = CRUD_Model.delete(id=obj.id)

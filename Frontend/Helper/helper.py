@@ -1,4 +1,4 @@
-from Frontend.Helper.file_chooser_button import *
+from Frontend.Helper.buttons import *
 from Backend.Services.file_handler import *
 from functools import partial
 from Backend.Database.sessions import *
@@ -42,14 +42,6 @@ icon_candidate_path = "Frontend/Resources/Bootstrap/mortarboard.png"
 icon_interviewer_path = "Frontend/Resources/Bootstrap/person.png"
 icon_interviewer_asignment_path = "Frontend/Resources/Bootstrap/journal-bookmark.png"
 icon_change_password_path = "Frontend/Resources/Bootstrap/key.png"
-
-sidemenu_stylesheet_normal = "border-radius: 5px; background-color: rgba(254, 175, 0, 40); padding: 5px 5px 5px 5px; text-align: left; padding-left: 10px;"
-sidemenu_stylesheet_hover = "border-radius: 5px; background-color: rgba(254, 175, 0, 180); padding: 5px 5px 5px 5px; text-align: left; padding-left: 10px;"
-home_button_stylesheet_normal = "background-color: rgba(54, 159, 212, 80); border-radius: 24px;"
-home_button_stylesheet_hover = "background-color: rgba(54, 159, 212, 160); border-radius: 24px 24px 24px 24px;"
-
-default_stylesheet_normal = "border-radius: 5px; background-color: rgba(54, 159, 212, 80); padding: 5px 5px 5px 5px;"
-default_stylesheet_hover = "border-radius: 5px; background-color: rgba(54, 159, 212, 160); padding: 5px 5px 5px 5px;"
 
 LANGUAGE: str = str('en')
 
@@ -232,58 +224,57 @@ def get_id_for_row(table_widget, row):
     return None
 
 
-class ActionButton(QPushButton):
-    def __init__(self,
-                 parent: QWidget = None,
-                 text: str = None,
-                 icon_path=None,
-                 signal=None,
-                 stylesheet_normal: str = default_stylesheet_normal,
-                 stylesheet_hover: str = default_stylesheet_hover):
-        super().__init__(parent)
-        if icon_path:
-            self.setIcon(QIcon(QPixmap(icon_path)))
-        self.setText(text)
-        if signal:
-            self.clicked.connect(signal)
+def populate_table(table_widget: QTableWidget, instances: list, model):
 
-        # Enable tracking mouse move events
-        self.setMouseTracking(True)
-        self.stylesheet_normal = stylesheet_normal
-        self.stylesheet_hover = stylesheet_hover
-        self.setStyleSheet(stylesheet_normal)
+    # Set the number of rows in the table
+    table_widget.setRowCount(len(instances))
 
-    def enterEvent(self, event):
-        # Set the style on hover
-        self.setStyleSheet(self.stylesheet_hover)
+    table_columns = []
+    is_user_subclass = issubclass(model, User) and model is not User
+    if is_user_subclass:
+        user_columns = getattr(User, '__table__', None).columns
+        if user_columns:
+            table_columns += list(user_columns)
+    table_columns += list(model.__table__.columns)
+    # Populate the table with data
+    for row, instance in enumerate(instances):
 
-    def leaveEvent(self, event):
-        # Reset the style when the mouse leaves
-        self.setStyleSheet(self.stylesheet_normal)
+        for col, column in enumerate(table_columns):
+            """
+            if column.primary_key:
+                # If the column is the primary key, use the value directly
+                item_text = str(getattr(instance, column.name))
+            """
+            if column.primary_key:
+                # If the column is the primary key, use the value directly
+                item_text = str(getattr(instance, column.name))
+            elif column.foreign_keys:
+                # Get the class of the related model
+                related_model_class = list(column.foreign_keys)[0].column.table
+                # Get the foreign key value
+                foreign_key_value = getattr(instance, column.name, None)
 
+                # Fetch the corresponding instance using the foreign key value
+                related_instance = session.query(
+                    related_model_class).filter_by(id=foreign_key_value).first()
+                if str(related_model_class) in ['interviewers', 'job_managers', 'candidates']:
+                    status, user = CRUD_User.read(id=related_instance.id)
+                    item_text = str(user.name)
+                else:
+                    if related_instance:
+                        item_text = str(related_instance.name)
+                    else:
+                        item_text = ''
 
-class RoundButton(QPushButton):
-    def __init__(self, icon_path, parent=None):
-        super().__init__(parent)
-        self.setIconSize(self.size())
-        self.setIcon(QIcon(icon_path))
-        self.setFixedSize(50, 50)  # Set the size of the button
+            else:
+                attr = getattr(instance, column.name)
+                if attr:
+                    item_text = str(attr)
+                else:
+                    item_text = ''
 
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
-        painter.setBrush(QBrush(QColor(255, 255, 255, 255))
-                         )  # Button background color
-        painter.setPen(Qt.PenStyle.NoPen)
-
-        # Draw a circle
-        painter.drawEllipse(0, 0, self.width(), self.height())
-
-        # Draw the icon
-        icon_rect = self.icon().pixmap(self.width(), self.height()).rect()
-        icon_rect.moveCenter(self.rect().center())
-        painter.drawPixmap(icon_rect, self.icon().pixmap(
-            self.width(), self.height()))
+            item = QTableWidgetItem(item_text)
+            table_widget.setItem(row, col, item)
 
 
 class QSignalVariable(QObject):
@@ -752,59 +743,6 @@ class Widget_Database_Table_Instances(QWidget):
         self.callback_create(model=self.model)
 
 
-def populate_table(table_widget: QTableWidget, instances: list, model):
-
-    # Set the number of rows in the table
-    table_widget.setRowCount(len(instances))
-
-    table_columns = []
-    is_user_subclass = issubclass(model, User) and model is not User
-    if is_user_subclass:
-        user_columns = getattr(User, '__table__', None).columns
-        if user_columns:
-            table_columns += list(user_columns)
-    table_columns += list(model.__table__.columns)
-    # Populate the table with data
-    for row, instance in enumerate(instances):
-
-        for col, column in enumerate(table_columns):
-            """
-            if column.primary_key:
-                # If the column is the primary key, use the value directly
-                item_text = str(getattr(instance, column.name))
-            """
-            if column.primary_key:
-                # If the column is the primary key, use the value directly
-                item_text = str(getattr(instance, column.name))
-            elif column.foreign_keys:
-                # Get the class of the related model
-                related_model_class = list(column.foreign_keys)[0].column.table
-                # Get the foreign key value
-                foreign_key_value = getattr(instance, column.name, None)
-
-                # Fetch the corresponding instance using the foreign key value
-                related_instance = session.query(
-                    related_model_class).filter_by(id=foreign_key_value).first()
-                if str(related_model_class) in ['interviewers', 'job_managers', 'candidates']:
-                    status, user = CRUD_User.read(id=related_instance.id)
-                    item_text = str(user.name)
-                else:
-                    if related_instance:
-                        item_text = str(related_instance.name)
-                    else:
-                        item_text = ''
-
-            else:
-                attr = getattr(instance, column.name)
-                if attr:
-                    item_text = str(attr)
-                else:
-                    item_text = ''
-
-            item = QTableWidgetItem(item_text)
-            table_widget.setItem(row, col, item)
-
-
 class Widget_ReadUpdateDelete(QWidget):
     """
     Read: callback_update = None\n
@@ -879,11 +817,7 @@ class Widget_ReadUpdateDelete(QWidget):
                 column=column, my_role=my_role) or not callback_update
 
             if getColumnFileType(column=column) == FileTypes.PDF_FILE.value:
-                button_pdf = Button_SelectFilePath(text="Download",
-                                                   parent=self,
-                                                   file_types=FileTypes.PDF_FILE.value,
-                                                   callback_on_selected=partial(self.on_save_pdf_file, column_name=column.name))
-                container_layout.addWidget(button_pdf)
+                # TODO
                 continue
 
             if is_not_updateable:
@@ -1004,7 +938,7 @@ class Widget_ReadUpdateDelete(QWidget):
     def back_button_clicked(self):
         if not self.callback_back:
             return
-        self.callback_back(model=self.model)
+        self.callback_back(model=self.model, obj=self.obj)
 
     def cancel_button_clicked(self):
         if self.callback_cancel:
@@ -1290,24 +1224,12 @@ class Widget_Create_MyApplicationForm(QWidget):
         if not is_nullable:
             self.label_cv.setStyleSheet("color: rgb(153, 0, 0)")
         container_layout.addWidget(self.label_cv)
-        cv_frame = QFrame(self)
-        cv_layout = QHBoxLayout(cv_frame)
-        cv_layout.setContentsMargins(0, 0, 0, 0)
-        self.label_cv_file_path = QLabel(self)
-        self.label_cv_file_path.setStyleSheet(
-            "background-color:rgba(0, 0, 153, 30); padding: 5px 5px 5px 5ps;")
-        self.label_cv_file_path.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        cv_layout.addWidget(self.label_cv_file_path)
-        self.button_cv = Button_SelectFilePath(text="Upload",
-                                               parent=self,
-                                               file_types=FileTypes.PDF_FILE.value,
-                                               callback_on_selected=self.on_selected_cv_file)
 
-        cv_layout.addWidget(
-            self.button_cv, alignment=Qt.AlignmentFlag.AlignRight)
-        container_layout.addWidget(cv_frame)
-
+        self.widget_cv_holder = Widget_FilePath(parent=self,
+                                                file_type=FileTypes.PDF_FILE.value,
+                                                callback_on_upload='dummy string',
+                                                callback_on_download='dummy string')
+        container_layout.addWidget(self.widget_cv_holder)
         is_nullable = ApplicationForm.job_id.nullable
         if is_nullable:
             label_job_text = f"{getColumnTranslation(
@@ -1361,8 +1283,7 @@ class Widget_Create_MyApplicationForm(QWidget):
         callback_cancel(model=self.model)
 
     def create_button_clicked(self, callback_create):
-        cv_file_path = self.label_cv_file_path.text()
-        cv_bytes_data = file_to_bytes(cv_file_path)
+        cv_bytes_data = self.widget_cv_holder.get_uploaded_data()
         callback_create(model=ApplicationForm, cv=cv_bytes_data,
                         candidate_id=self.candidate_id, job_id=self.obj.id)
 

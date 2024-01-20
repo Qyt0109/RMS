@@ -7,7 +7,10 @@ def initTestDatabase():
     CRUD_JobStatus.create(name="Hiring")
     CRUD_JobStatus.create(name="Not available")
     CRUD_JobStatus.create(name="Closed")
-    for i in range(1, 6):
+    CRUD_ApplicationFormStatus.create(name="Hired")
+    CRUD_ApplicationFormStatus.create(name="Interview pending")
+    CRUD_ApplicationFormStatus.create(name="Reject")
+    for i in range(1, 10):
         status, result = CRUD_Admin.create(username=f"admin{i}",
                                            password="admin",
                                            email=f"admin{i}@gmail.com",

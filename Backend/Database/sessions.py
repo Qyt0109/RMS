@@ -16,7 +16,7 @@ db_host = 'gateway01.ap-northeast-1.prod.aws.tidbcloud.com'
 db_port = '4000'
 db_username = '3xKs6MSRB2UKUd5.root'
 if platform.system() == "Windows":
-    db_ssl_ca_path = 'C:/cer.pem' # https://letsencrypt.org/certs/isrgrootx1.pem
+    db_ssl_ca_path = 'C:/cer.pem'  # https://letsencrypt.org/certs/isrgrootx1.pem
 else:
     db_ssl_ca_path = '/etc/ssl/cert.pem'
 db_password = db_password
@@ -24,7 +24,8 @@ db_password = db_password
 ECHO = True
 TEST = True
 
-connection_url_string = f"{db_type}+{db_connector_module}://{db_username}:{db_password}@{db_host}:{db_port}/test?ssl_ca={db_ssl_ca_path}&ssl_verify_cert=true&ssl_verify_identity=true"
+connection_url_string = f"{db_type}+{db_connector_module}://{db_username}:{db_password}@{
+    db_host}:{db_port}/test?ssl_ca={db_ssl_ca_path}&ssl_verify_cert=true&ssl_verify_identity=true"
 if TEST:
     engine = create_engine('sqlite:///Backend/Database/db.sqlite', echo=ECHO)
 else:
@@ -38,6 +39,7 @@ Session = sessionmaker(bind=engine)
 # default_session = Session()
 
 session = Session()
+
 
 class Base_Status(EnumMeta):
     """ # Base class for Enum Status classes\n
@@ -63,8 +65,9 @@ class CRUD_Status(Base_Status):
     # NO_CHANGES = 'Không có thay đổi'
     # EXISTED = 'Đã tồn tại'
 
+
 def crud_handler_wrapper(func: Callable) -> Tuple[CRUD_Status, any]:
-    def wrapper(*args, **kwargs)->Tuple[CRUD_Status, any]:
+    def wrapper(*args, **kwargs) -> Tuple[CRUD_Status, any]:
         try:
             result = func(*args, **kwargs)
             session.commit()
@@ -74,8 +77,9 @@ def crud_handler_wrapper(func: Callable) -> Tuple[CRUD_Status, any]:
             return CRUD_Status.ERROR, e
     return wrapper
 
+
 def read_handler_wrapper(func: Callable) -> Tuple[CRUD_Status, any]:
-    def wrapper(*args, **kwargs)->Tuple[CRUD_Status, any]:
+    def wrapper(*args, **kwargs) -> Tuple[CRUD_Status, any]:
         try:
             result = func(*args, **kwargs)
             return result
@@ -83,10 +87,11 @@ def read_handler_wrapper(func: Callable) -> Tuple[CRUD_Status, any]:
             return CRUD_Status.ERROR, e
     return wrapper
 
+
 class CRUD_Base:
     # Subclasses should define the SQLAlchemy model class
     model = None
-    
+
     @classmethod
     @crud_handler_wrapper
     def create(cls, **kwargs) -> Tuple[CRUD_Status, any]:
@@ -103,7 +108,7 @@ class CRUD_Base:
         if not found_instance:
             return CRUD_Status.NOT_FOUND, None
         return CRUD_Status.FOUND, found_instance
-    
+
     @classmethod
     @read_handler_wrapper
     def read_by_filter(cls, **kwargs) -> Tuple[CRUD_Status, List[any]]:
@@ -148,11 +153,13 @@ class CRUD_Base:
             return CRUD_Status.NOT_FOUND, None
         session.delete(found_instance)
         return CRUD_Status.DELETED, None
-    
+
+
 class Login_Status(Base_Status):
     LOGIN_FAILED = "Không thể đăng nhập, xin kiểm tra lại thông tin"
     LOGIN_SUCCESS = "Đăng nhập thành công"
-    
+
+
 class CRUD_User(CRUD_Base):
     model = User
 
@@ -161,7 +168,8 @@ class CRUD_User(CRUD_Base):
         """ Login with username and password """
         try:
             password_hash = hash_string(password)
-            user = session.query(cls.model).filter_by(username=username, password_hash=password_hash).first()
+            user = session.query(cls.model).filter_by(
+                username=username, password_hash=password_hash).first()
             if user:
                 return Login_Status.LOGIN_SUCCESS, user
             else:
@@ -169,40 +177,48 @@ class CRUD_User(CRUD_Base):
         except Exception as e:
             return Login_Status.ERROR, e
 
+
 class CRUD_Admin(CRUD_Base):
     model = Admin
+
 
 class CRUD_JobManager(CRUD_Base):
     model = JobManager
 
+
 class CRUD_Interviewer(CRUD_Base):
     model = Interviewer
+
 
 class CRUD_Candidate(CRUD_Base):
     model = Candidate
 
+
 class CRUD_Gender(CRUD_Base):
     model = Gender
 
-class CRUD_RequisitionStatus(CRUD_Base):
-    model = RequisitionStatus
-
-class CRUD_Requisition(CRUD_Base):
-    model = Requisition
 
 class CRUD_ApplicationForm(CRUD_Base):
     model = ApplicationForm
 
+
 class CRUD_InterviewerAssignment(CRUD_Base):
     model = InterviewerAssignment
+
 
 class CRUD_Job(CRUD_Base):
     model = Job
 
+
 class CRUD_JobStatus(CRUD_Base):
     model = JobStatus
 
-def get_crud_class(model_class)->CRUD_Base:
+
+class CRUD_ApplicationFormStatus(CRUD_Base):
+    model = ApplicationFormStatus
+
+
+def get_crud_class(model_class) -> CRUD_Base:
     # Assuming that the CRUD classes are defined in the same module
     crud_class_name = f"CRUD_{model_class.__name__}"
 

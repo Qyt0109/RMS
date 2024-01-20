@@ -1,3 +1,5 @@
+from Frontend.Helper.file_chooser_button import *
+from Backend.Services.file_handler import *
 from functools import partial
 from Backend.Database.sessions import *
 from Backend.Services.time import *
@@ -19,6 +21,12 @@ from PyQt6.QtGui import *
 
 
 # Paths
+icon_logout_path = "Frontend/Resources/Bootstrap/box-arrow-left.png"
+icon_database_path = "Frontend/Resources/Bootstrap/database-fill.png"
+icon_settings_path = "Frontend/Resources/Bootstrap/gear-fill.png"
+icon_select_path = "Frontend/Resources/Bootstrap/arrow-right.png"
+icon_application_form_path = "Frontend/Resources/Bootstrap/envelope-paper.png"
+
 icon_search_path = "Frontend/Resources/Bootstrap/search.png"
 icon_options_path = "Frontend/Resources/Bootstrap/sliders.png"
 icon_home_path = "Frontend/Resources/Bootstrap/house-fill.png"
@@ -142,6 +150,88 @@ def get_translation(key, language=LANGUAGE):
     return translation
 
 
+def initActionButtons(parent_widget: QWidget,
+                      action_buttons: list[QPushButton]):
+    clearAllWidgets(parent_widget=parent_widget)
+    parent_layout = parent_widget.layout()
+    for action_button in action_buttons:
+        parent_layout.addWidget(action_button)
+
+
+def getAvaiableJobs(avaiable_job_id: int = 1):
+    """ Assuming Job instances with\n#### job_status_id=avaiable_job_id\nis avaiable for anyone """
+    status, instances = CRUD_Job.read_by_filter(job_status_id=avaiable_job_id)
+    print(status, instances)
+    if status != CRUD_Status.FOUND:
+        instances = []
+    return instances
+
+
+def clearAllWidgets(parent_widget: QWidget):
+    layout = parent_widget.layout()
+    if layout:
+        while layout.count():
+            w = layout.takeAt(0).widget()
+            if w:
+                w.deleteLater()
+
+
+def clearLayoutWidgets(layout: QLayout):
+    while layout.count():
+        widget = layout.takeAt(0).widget()
+        if widget:
+            widget.deleteLater()
+
+
+def togglePasswordVisibility(line_edit: QLineEdit, button: QPushButton):
+    is_hide = line_edit.echoMode() == QLineEdit.EchoMode.Password
+    if is_hide:
+        line_edit.setEchoMode(QLineEdit.EchoMode.Normal)
+        button.setIcon(QIcon(QPixmap(icon_show_path)))
+    else:
+        line_edit.setEchoMode(QLineEdit.EchoMode.Password)
+        button.setIcon(QIcon(QPixmap(icon_hide_path)))
+
+
+def setTableTextCell(table: QTableWidget, text: str, row, col):
+    qitem = QTableWidgetItem(text)
+    qitem.setFlags(qitem.flags() & ~PyQt6.QtCore.Qt.ItemFlag.ItemIsEditable)
+    table.setItem(row, col, qitem)
+
+
+def setTableWidgetCell(table: QTableWidget, widget: QWidget, row, col):
+    table.setCellWidget(row, col, widget)
+
+
+def setTableResizeMode(table: QTableWidget, resize_modes: List[QHeaderView.ResizeMode]):
+    for col, resize_mode in enumerate(resize_modes):
+        table.horizontalHeader().setSectionResizeMode(col, resize_mode)
+
+
+def hide_columns_by_header_labels(table_widget: QTableWidget, header_labels: list[str]):
+    header = table_widget.horizontalHeader()
+
+    for col in range(table_widget.columnCount()):
+        item = header.model().headerData(col, header.orientation())
+
+        if item and item in header_labels:
+            table_widget.setColumnHidden(col, True)
+
+
+def get_id_for_row(table_widget, row):
+    header_labels = [table_widget.horizontalHeaderItem(col).text()
+                     for col in range(table_widget.columnCount())]
+
+    id_column_index = header_labels.index(
+        "id") if "id" in header_labels else -1
+
+    if id_column_index != -1:
+        id_item = table_widget.item(row, id_column_index)
+        if id_item and id_item.text() != 'None':
+            return int(id_item.text())
+    return None
+
+
 class ActionButton(QPushButton):
     def __init__(self,
                  parent: QWidget = None,
@@ -170,31 +260,6 @@ class ActionButton(QPushButton):
     def leaveEvent(self, event):
         # Reset the style when the mouse leaves
         self.setStyleSheet(self.stylesheet_normal)
-
-
-def initActionButtons(parent_widget: QWidget,
-                      action_buttons: list[QPushButton]):
-    clearAllWidgets(parent_widget=parent_widget)
-    parent_layout = parent_widget.layout()
-    for action_button in action_buttons:
-        parent_layout.addWidget(action_button)
-
-
-# Paths
-icon_search_path = "Frontend/Resources/Bootstrap/search.png"
-icon_options_path = "Frontend/Resources/Bootstrap/sliders.png"
-icon_home_path = "Frontend/Resources/Bootstrap/house-fill.png"
-icon_back_path = "Frontend/Resources/Bootstrap/arrow-left.png"
-icon_menu_path = "Frontend/Resources/Bootstrap/list.png"
-icon_show_path = "Frontend/Resources/Bootstrap/eye.png"
-icon_hide_path = "Frontend/Resources/Bootstrap/eye-slash.png"
-icon_edit_path = "Frontend/Resources/Bootstrap/pencil-square.png"
-icon_delete_path = "Frontend/Resources/Bootstrap/trash3.png"
-icon_logout_path = "Frontend/Resources/Bootstrap/box-arrow-left.png"
-icon_database_path = "Frontend/Resources/Bootstrap/database-fill.png"
-icon_settings_path = "Frontend/Resources/Bootstrap/gear-fill.png"
-icon_select_path = "Frontend/Resources/Bootstrap/arrow-right.png"
-icon_application_form_path = "Frontend/Resources/Bootstrap/envelope-paper.png"
 
 
 class RoundButton(QPushButton):
@@ -239,47 +304,6 @@ class QSignalVariable(QObject):
             self._state = new_state
             # Emit signal with True if new_state is not None, False otherwise
             self.stateChanged.emit(new_state is not None)
-
-
-def clearAllWidgets(parent_widget: QWidget):
-    layout = parent_widget.layout()
-    if layout:
-        while layout.count():
-            w = layout.takeAt(0).widget()
-            if w:
-                w.deleteLater()
-
-
-def clearLayoutWidgets(layout: QLayout):
-    while layout.count():
-        widget = layout.takeAt(0).widget()
-        if widget:
-            widget.deleteLater()
-
-
-def togglePasswordVisibility(line_edit: QLineEdit, button: QPushButton):
-    is_hide = line_edit.echoMode() == QLineEdit.EchoMode.Password
-    if is_hide:
-        line_edit.setEchoMode(QLineEdit.EchoMode.Normal)
-        button.setIcon(QIcon(QPixmap(icon_show_path)))
-    else:
-        line_edit.setEchoMode(QLineEdit.EchoMode.Password)
-        button.setIcon(QIcon(QPixmap(icon_hide_path)))
-
-
-def setTableTextCell(table: QTableWidget, text: str, row, col):
-    qitem = QTableWidgetItem(text)
-    qitem.setFlags(qitem.flags() & ~PyQt6.QtCore.Qt.ItemFlag.ItemIsEditable)
-    table.setItem(row, col, qitem)
-
-
-def setTableWidgetCell(table: QTableWidget, widget: QWidget, row, col):
-    table.setCellWidget(row, col, widget)
-
-
-def setTableResizeMode(table: QTableWidget, resize_modes: List[QHeaderView.ResizeMode]):
-    for col, resize_mode in enumerate(resize_modes):
-        table.horizontalHeader().setSectionResizeMode(col, resize_mode)
 
 
 class Widget_Database(QWidget):
@@ -390,15 +414,15 @@ class Widget_Database_Table(QWidget):
 
         for table_column in table_columns:
             if isThisColumnHideToMe(column=table_column, my_role=my_role):
-                hide_columns.append(table_column.info.get('description', {}).get(
-                                    LANGUAGE, table_column.name))
+                hide_columns.append(getColumnTranslation(
+                    column=table_column, language=LANGUAGE))
 
         # +1 for the extra action buttons column
         column_count += len(table_columns) + 1
 
         # Get the Database's table column descriptions for the headers
-        header_labels += [column.info.get('description', {}).get(
-            LANGUAGE, column.name) for column in table_columns]
+        header_labels += [getColumnTranslation(column=column, language=LANGUAGE)
+                          for column in table_columns]
 
         # Add an extra column for functionality
         header_labels += [get_translation(key='action_button')]
@@ -514,64 +538,6 @@ class Widget_Database_Table(QWidget):
             return
         self.callback_create(model=self.model)
 
-    """
-    def populate_table(self):
-        # Retrieve all instances of the model from the database
-        CRUD_Class = get_crud_class(model_class=self.model)
-        status, instances = CRUD_Class.read_all()
-
-        if status != CRUD_Status.FOUND:
-            instances = []
-
-        # Set the number of rows in the table
-        self.table_widget.setRowCount(len(instances))
-
-        table_columns = []
-        if self.is_user_subclass:
-            user_columns = getattr(User, '__table__', None).columns
-            if user_columns:
-                table_columns += list(user_columns)
-        table_columns += list(self.model.__table__.columns)
-        # Populate the table with data
-        for row, instance in enumerate(instances):
-
-            for col, column in enumerate(table_columns):
-
-                #if column.primary_key:
-                    # If the column is the primary key, use the value directly
-                #    item_text = str(getattr(instance, column.name))
-
-                if column.primary_key:
-                    # If the column is the primary key, use the value directly
-                    item_text = str(getattr(instance, column.name))
-                elif column.foreign_keys:
-                    # Get the class of the related model
-                    related_model_class = list(column.foreign_keys)[0].column.table
-                    # Get the foreign key value
-                    foreign_key_value = getattr(instance, column.name, None)
-
-                    # Fetch the corresponding instance using the foreign key value
-                    related_instance = session.query(related_model_class).filter_by(id=foreign_key_value).first()
-                    if str(related_model_class) in ['interviewers', 'job_managers', 'candidates']:
-                        status, user = CRUD_User.read(id=related_instance.id)
-                        item_text = str(user.name)
-                    else:
-                        if related_instance:
-                            item_text = str(related_instance.name)
-                        else:
-                            item_text = ''
-
-                else:
-                    attr = getattr(instance, column.name)
-                    if attr:
-                        item_text = str(attr)
-                    else:
-                        item_text = ''
-
-                item = QTableWidgetItem(item_text)
-                self.table_widget.setItem(row, col, item)
-    """
-
 
 class Widget_Database_Table_Instances(QWidget):
     def __init__(self,
@@ -650,15 +616,15 @@ class Widget_Database_Table_Instances(QWidget):
 
         for table_column in table_columns:
             if isThisColumnHideToMe(column=table_column, my_role=my_role):
-                hide_columns.append(table_column.info.get('description', {}).get(
-                                    LANGUAGE, table_column.name))
+                hide_columns.append(getColumnTranslation(
+                    column=table_column, language=LANGUAGE))
 
         # +1 for the extra action buttons column
         column_count += len(table_columns) + 1
 
         # Get the Database's table column descriptions for the headers
-        header_labels += [column.info.get('description', {}).get(
-            LANGUAGE, column.name) for column in table_columns]
+        header_labels += [getColumnTranslation(column=column, language=LANGUAGE)
+                          for column in table_columns]
 
         # Add an extra column for functionality
         header_labels += [get_translation(key='action_button')]
@@ -839,30 +805,6 @@ def populate_table(table_widget: QTableWidget, instances: list, model):
             table_widget.setItem(row, col, item)
 
 
-def hide_columns_by_header_labels(table_widget: QTableWidget, header_labels: list[str]):
-    header = table_widget.horizontalHeader()
-
-    for col in range(table_widget.columnCount()):
-        item = header.model().headerData(col, header.orientation())
-
-        if item and item in header_labels:
-            table_widget.setColumnHidden(col, True)
-
-
-def get_id_for_row(table_widget, row):
-    header_labels = [table_widget.horizontalHeaderItem(col).text()
-                     for col in range(table_widget.columnCount())]
-
-    id_column_index = header_labels.index(
-        "id") if "id" in header_labels else -1
-
-    if id_column_index != -1:
-        id_item = table_widget.item(row, id_column_index)
-        if id_item and id_item.text() != 'None':
-            return int(id_item.text())
-    return None
-
-
 class Widget_ReadUpdateDelete(QWidget):
     """
     Read: callback_update = None\n
@@ -923,8 +865,8 @@ class Widget_ReadUpdateDelete(QWidget):
             if column.name in hide_columns:
                 continue
             # Get translated description of the column
-            description = column.info.get(
-                'description', {}).get(LANGUAGE, column.name)
+            description = getColumnTranslation(
+                column=column, language=LANGUAGE)
             if column.nullable or not callback_update:
                 label_name = QLabel(f"{description}:", parent=self)
             else:
@@ -935,6 +877,15 @@ class Widget_ReadUpdateDelete(QWidget):
             # Updateable column ?
             is_not_updateable = not isUpdateableToMe(
                 column=column, my_role=my_role) or not callback_update
+
+            if getColumnFileType(column=column) == FileTypes.PDF_FILE.value:
+                button_pdf = Button_SelectFilePath(text="Download",
+                                                   parent=self,
+                                                   file_types=FileTypes.PDF_FILE.value,
+                                                   callback_on_selected=partial(self.on_save_pdf_file, column_name=column.name))
+                container_layout.addWidget(button_pdf)
+                continue
+
             if is_not_updateable:
                 if column.foreign_keys:
                     # Get the class of the related model
@@ -950,7 +901,8 @@ class Widget_ReadUpdateDelete(QWidget):
                         status, user = CRUD_User.read(id=instance.id)
                         label_value_text = str(user.name)
                     else:
-                        label_value_text = str(instance.name)
+                        label_value_text = str(
+                            instance.name) if instance else ''
                 else:
                     attr = getattr(self.obj, column.name, None)
                     label_value_text = str(attr) if attr else ''
@@ -1058,6 +1010,13 @@ class Widget_ReadUpdateDelete(QWidget):
         if self.callback_cancel:
             self.callback_cancel(model=self.model)
 
+    def on_upload_file(self, column_name):
+        pass
+
+    def on_save_pdf_file(self, column_name):
+
+        pass
+
     def update_button_clicked(self):
         if not self.callback_update:
             return
@@ -1087,31 +1046,6 @@ class Widget_ReadUpdateDelete(QWidget):
         if not self.callback_delete:
             return
         self.callback_delete(obj=self.obj)
-
-
-def isPermissionToMe(model, my_role, operand: str):
-    # Get the 'permission' dictionary, default to an empty dictionary if it doesn't exist
-    permission_info = model.info.get('permission', {})
-
-    # Get the 'operand' list from the 'permission' dictionary, default to an empty list if it doesn't exist
-    read_permission_roles = permission_info.get(operand, [])
-
-    # Check if my_role is in the 'operand' list
-    is_allowed = my_role in read_permission_roles
-
-    return is_allowed
-
-
-def isThisColumnHideToMe(column, my_role):
-    hide_to_roles = column.info.get('hide', [])
-    is_hide = my_role in hide_to_roles
-    return is_hide
-
-
-def isUpdateableToMe(column, my_role):
-    updateable_to_roles = column.info.get('updateable', [])
-    is_updateable = my_role in updateable_to_roles
-    return is_updateable
 
 
 class Widget_SelfUpdate(QWidget):
@@ -1318,23 +1252,12 @@ class Widget_SelfUpdate(QWidget):
             return widget.text() if widget.text() != '' else None
 
 
-def getAvaiableJobs(avaiable_job_id: int = 1):
-    """ Assuming Job instances with\n#### job_status_id=avaiable_job_id\nis avaiable for anyone """
-    status, instances = CRUD_Job.read_by_filter(job_status_id=avaiable_job_id)
-    print(status, instances)
-    if status != CRUD_Status.FOUND:
-        instances = []
-    return instances
-
-def getColumnTranslation(column, language):
-    return column.info.get('description', {}).get(language, column.name)
-
 class Widget_Create_MyApplicationForm(QWidget):
-    def __init__(self, parent: QWidget, candidate_id, job, callback_back=None, callback_cancel=None, callback_create=None) -> None:
+    def __init__(self, parent: QWidget, candidate_id, obj, callback_back=None, callback_cancel=None, callback_create=None) -> None:
         super().__init__(parent)
         self.layout = QVBoxLayout(self)
         self.candidate_id = candidate_id
-        self.job = job
+        self.obj = obj  # job
         self.model = ApplicationForm
 
         frame_buttons = QFrame(self)
@@ -1358,36 +1281,50 @@ class Widget_Create_MyApplicationForm(QWidget):
 
         is_nullable = ApplicationForm.cv.nullable
         if is_nullable:
-            label_cv_text = f"{getColumnTranslation(column=ApplicationForm.cv, language=LANGUAGE)}:"
+            label_cv_text = f"{getColumnTranslation(
+                column=ApplicationForm.cv, language=LANGUAGE)}:"
         else:
-            label_cv_text = f"{getColumnTranslation(column=ApplicationForm.cv, language=LANGUAGE)} (*):"
-        self.label_cv = QLabel(text=label_cv_text, parent=self)
+            label_cv_text = f"{getColumnTranslation(
+                column=ApplicationForm.cv, language=LANGUAGE)} (*):"
+        self.label_cv = QLabel(parent=self, text=label_cv_text)
         if not is_nullable:
             self.label_cv.setStyleSheet("color: rgb(153, 0, 0)")
         container_layout.addWidget(self.label_cv)
-        
-        label_cv_value = QLabel('')
-        label_cv_value.setStyleSheet(
-                "background-color:rgba(0, 0, 153, 30); padding: 5px 5px 5px 5ps;")
-        container_layout.addWidget(label_cv_value)
+        cv_frame = QFrame(self)
+        cv_layout = QHBoxLayout(cv_frame)
+        cv_layout.setContentsMargins(0, 0, 0, 0)
+        self.label_cv_file_path = QLabel(self)
+        self.label_cv_file_path.setStyleSheet(
+            "background-color:rgba(0, 0, 153, 30); padding: 5px 5px 5px 5ps;")
+        self.label_cv_file_path.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        cv_layout.addWidget(self.label_cv_file_path)
+        self.button_cv = Button_SelectFilePath(text="Upload",
+                                               parent=self,
+                                               file_types=FileTypes.PDF_FILE.value,
+                                               callback_on_selected=self.on_selected_cv_file)
+
+        cv_layout.addWidget(
+            self.button_cv, alignment=Qt.AlignmentFlag.AlignRight)
+        container_layout.addWidget(cv_frame)
 
         is_nullable = ApplicationForm.job_id.nullable
         if is_nullable:
-            label_job_text = f"{getColumnTranslation(column=ApplicationForm.cv, language=LANGUAGE)}:"
+            label_job_text = f"{getColumnTranslation(
+                column=ApplicationForm.job_id, language=LANGUAGE)}:"
         else:
-            label_job_text = f"{getColumnTranslation(column=ApplicationForm.cv, language=LANGUAGE)} (*):"
+            label_job_text = f"{getColumnTranslation(
+                column=ApplicationForm.job_id, language=LANGUAGE)} (*):"
         self.label_job = QLabel(text=label_job_text, parent=self)
         if not is_nullable:
             self.label_cv.setStyleSheet("color: rgb(153, 0, 0)")
         container_layout.addWidget(self.label_job)
 
-        label_job_value = QLabel(job.name)
+        label_job_value = QLabel(obj.name)
         label_job_value.setStyleSheet(
-                "background-color:rgba(0, 0, 153, 30); padding: 5px 5px 5px 5ps;")
+            "background-color:rgba(0, 0, 153, 30); padding: 5px 5px 5px 5ps;")
         container_layout.addWidget(label_job_value)
 
-
-        
         # Spacer
         spacer_widget = QWidget(parent=self)
         spacer_widget.setSizePolicy(QSizePolicy.Policy.Expanding,
@@ -1413,6 +1350,9 @@ class Widget_Create_MyApplicationForm(QWidget):
         self.setLayout(self.layout)
 
         # self.setLayout(self.layout)
+    def on_selected_cv_file(self, file_path):
+        self.label_cv_file_path.setText(file_path)
+        pass
 
     def back_button_clicked(self, callback_back):
         callback_back(model=self.model)
@@ -1421,8 +1361,10 @@ class Widget_Create_MyApplicationForm(QWidget):
         callback_cancel(model=self.model)
 
     def create_button_clicked(self, callback_create):
-
-        callback_create(model=ApplicationForm, cv=None, candidate_id=self.candidate_id, job_id=self.job.id)
+        cv_file_path = self.label_cv_file_path.text()
+        cv_bytes_data = file_to_bytes(cv_file_path)
+        callback_create(model=ApplicationForm, cv=cv_bytes_data,
+                        candidate_id=self.candidate_id, job_id=self.obj.id)
 
     def get_widget_value(self, widget):
         if isinstance(widget, QDateTimeEdit):

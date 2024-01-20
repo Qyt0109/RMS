@@ -310,7 +310,7 @@ class MyApplication(QMainWindow):
                 obj=this_appliction_form, model=ApplicationForm)
         # Else create a new form with candidate_id = my_id
         else:
-            self.toPage_Candidate_ApplicationForms_Create(job=obj)
+            self.toPage_Candidate_ApplicationForms_Create(obj=obj)
 
     def getMyApplicationForms(self) -> List[ApplicationForm]:
         # Candidate validation
@@ -335,29 +335,29 @@ class MyApplication(QMainWindow):
                                                        callback_read=self.toPage_Candidate_ApplicationForms_Read)
         parent_layout.addWidget(widget_table)
 
-    def toPage_Candidate_ApplicationForms_Read(self, job, model, **kwargs):
+    def toPage_Candidate_ApplicationForms_Read(self, obj, model, **kwargs):
         self.ui.stackedWidget.setCurrentWidget(self.ui.page_Database)
         parent = self.ui.page_Database
         parent_layout = parent.layout()
         clearAllWidgets(parent)
         widget_read = Widget_ReadUpdateDelete(parent=parent,
-                                              job=job,
+                                              obj=obj,
                                               model=model,
                                               my_role=self.logged_in_user.state.role,
-                                              callback_back=self.toPage_Candidate_ApplicationForms)
+                                              callback_back=self.toPage_Candidate_Jobs_Read)
 
         parent_layout.addWidget(widget_read)
 
-    def toPage_Candidate_ApplicationForms_Create(self, job, **kwargs):
+    def toPage_Candidate_ApplicationForms_Create(self, obj, **kwargs):
         self.ui.stackedWidget.setCurrentWidget(self.ui.page_Database)
         parent = self.ui.page_Database
         parent_layout = parent.layout()
         clearAllWidgets(parent)
         widget_create = Widget_Create_MyApplicationForm(parent=parent,
                                                         candidate_id=self.logged_in_user.state.id,
-                                                        job=job,
-                                                        callback_back=self.toPage_Candidate_ApplicationForms,
-                                                        callback_cancel=self.toPage_Candidate_ApplicationForms,
+                                                        obj=obj,
+                                                        callback_back=self.toPage_Candidate_Jobs,
+                                                        callback_cancel=self.toPage_Candidate_Jobs,
                                                         callback_create=self.createData)
 
         parent_layout.addWidget(widget_create)

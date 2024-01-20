@@ -12,6 +12,11 @@ Base = declarative_base()
 
 STRING_LENGTH = 64
 
+class OperandStates(Enum):
+    CREATE = 'create'
+    READ = 'read',
+    UPDATE = 'update'
+    DELETE = 'delete'
 
 class RoleStates(Enum):
     USER = 'Người dùng'
@@ -19,6 +24,12 @@ class RoleStates(Enum):
     CANDIDATE = 'Ứng viên'
     INTERVIEWER = 'Người phỏng vấn'
     JOB_MANAGER = 'Người quản lý công việc'
+
+
+class FileTypes(Enum):
+    ALL_FILE = 'All Files (*)'
+    IMAGE_FILE = 'Image Files (*.png *.jpg *.bmp *.gif)'
+    PDF_FILE = 'PDF Files (*.pdf)'
 
 
 class ReprAble:
@@ -192,7 +203,7 @@ class User(Base, ReprAble):
                         [
                         RoleStates.ADMIN.name
                     ],
-                    'filetype':'png'
+                        'filetype': FileTypes.IMAGE_FILE.value
                     })
     # created_time = Column(DateTime, default=datetime.now())
 
@@ -202,10 +213,10 @@ class User(Base, ReprAble):
                            'en': 'Gender',
                            'vn': 'Giới tính'
                        },
-                        "updateable":
-                        [
-                        RoleStates.ADMIN.name
-                    ]})
+        "updateable":
+        [
+                           RoleStates.ADMIN.name
+                       ]})
     gender = relationship('Gender', back_populates='users')
 
     __mapper_args__ = {
@@ -268,11 +279,10 @@ class Candidate(User):
     # Other Candidate's columns here...
 
     # 1-n relationships
-    interviewer_assignments = relationship(
-        "InterviewerAssignment", back_populates="candidate")
+    
     application_forms = relationship(
         "ApplicationForm", back_populates="candidate")
-
+    
     __mapper_args__ = {
         'polymorphic_identity': RoleStates.CANDIDATE.name,
         'polymorphic_load': 'inline'
@@ -408,8 +418,8 @@ class Job(Base, ReprAble):
                       'en': 'Job Name',
                       'vn': 'Tên công việc'
                   },
-                  'updateable':
-                  [
+        'updateable':
+        [
                       RoleStates.ADMIN.name,
                       RoleStates.JOB_MANAGER.name
                   ]})
@@ -418,34 +428,33 @@ class Job(Base, ReprAble):
                              'en': 'Job Description',
                              'vn': 'Mô tả công việc'
                          },
-                  'updateable':
-                  [
-                      RoleStates.ADMIN.name,
-                      RoleStates.JOB_MANAGER.name
-                  ]})
+        'updateable':
+        [
+                             RoleStates.ADMIN.name,
+                             RoleStates.JOB_MANAGER.name
+                         ]})
     pay = Column(String(length=STRING_LENGTH), nullable=False,
                  info={'description': {
                      'en': 'Job Pay',
                      'vn': 'Mức lương công việc'
                  },
-                  'updateable':
-                  [
-                      RoleStates.ADMIN.name,
-                      RoleStates.JOB_MANAGER.name
-                  ]})
+        'updateable':
+        [
+                     RoleStates.ADMIN.name,
+                     RoleStates.JOB_MANAGER.name
+                 ]})
     requirement = Column(String(length=STRING_LENGTH), nullable=False,
                          info={'description': {
                              'en': 'Job Requirement',
                              'vn': 'Yêu cầu công việc'
                          },
-                  'updateable':
-                  [
-                      RoleStates.ADMIN.name,
-                      RoleStates.JOB_MANAGER.name
-                  ]})
+        'updateable':
+        [
+                             RoleStates.ADMIN.name,
+                             RoleStates.JOB_MANAGER.name
+                         ]})
     # 1-n relationships
     application_forms = relationship('ApplicationForm', back_populates='job')
-
 
     # n-1 relationships
     job_status_id = Column(Integer, ForeignKey(
@@ -454,11 +463,11 @@ class Job(Base, ReprAble):
             'en': 'Job Status',
             'vn': 'Trạng thái công việc'
         },
-                  'updateable':
-                  [
-                      RoleStates.ADMIN.name,
-                      RoleStates.JOB_MANAGER.name
-                  ]})
+        'updateable':
+        [
+            RoleStates.ADMIN.name,
+            RoleStates.JOB_MANAGER.name
+        ]})
     job_status = relationship('JobStatus', back_populates='jobs')
 
 
@@ -501,32 +510,32 @@ class InterviewerAssignment(Base, ReprAble):
                                     'en': 'Interview Location',
                                     'vn': 'Địa điểm phỏng vấn'
                                 },
-                          "updateable":
-                          [
-                              RoleStates.ADMIN.name,
-                              RoleStates.JOB_MANAGER.name,
-                      ]})
+        "updateable":
+        [
+                                    RoleStates.ADMIN.name,
+                                    RoleStates.JOB_MANAGER.name,
+                                ]})
     interview_datetime = Column(DateTime,
                                 nullable=False,
                                 info={'description': {
                                     'en': 'Interview Datetime',
                                     'vn': 'Thời điểm phỏng vấn'
                                 },
-                          "updateable":
-                          [
-                              RoleStates.ADMIN.name,
-                              RoleStates.JOB_MANAGER.name,
-                      ]})
+                                    "updateable":
+                                    [
+                                    RoleStates.ADMIN.name,
+                                    RoleStates.JOB_MANAGER.name,
+                                ]})
     note = Column(String(length=STRING_LENGTH),
                   info={'description': {
                       'en': 'Interview Note',
                       'vn': 'Ghi chú phỏng vấn'
                   },
-                          "updateable":
-                          [
-                              RoleStates.ADMIN.name,
-                              RoleStates.JOB_MANAGER.name,
-                      ]})
+        "updateable":
+        [
+                      RoleStates.ADMIN.name,
+                      RoleStates.JOB_MANAGER.name,
+                  ]})
     # n-1 Relationships
     interviewer_id = Column(Integer, ForeignKey('interviewers.id'),
                             nullable=False,
@@ -534,11 +543,11 @@ class InterviewerAssignment(Base, ReprAble):
                                 'en': 'Interviewer',
                                 'vn': 'Nhân viên phỏng vấn'
                             },
-                          "updateable":
-                          [
-                              RoleStates.ADMIN.name,
-                              RoleStates.JOB_MANAGER.name,
-                      ]})
+        "updateable":
+        [
+                                RoleStates.ADMIN.name,
+                                RoleStates.JOB_MANAGER.name,
+                            ]})
     interviewer = relationship(
         "Interviewer", back_populates="interviewer_assignments")
     job_manager_id = Column(Integer, ForeignKey('job_managers.id'),
@@ -547,26 +556,26 @@ class InterviewerAssignment(Base, ReprAble):
                                 'en': 'Job Manager',
                                 'vn': 'Người quản lý công việc'
                             },
-                          "updateable":
-                          [
-                              RoleStates.ADMIN.name,
-                              RoleStates.JOB_MANAGER.name,
-                      ]})
+        "updateable":
+        [
+                                RoleStates.ADMIN.name,
+                                RoleStates.JOB_MANAGER.name,
+                            ]})
     job_manager = relationship(
         "JobManager", back_populates="interviewer_assignments")
-    candidate_id = Column(Integer, ForeignKey('candidates.id'),
+    application_form_id = Column(Integer, ForeignKey('application_forms.id'),
                           nullable=False,
                           info={'description': {
-                              'en': 'Candidate',
-                              'vn': 'Ứng viên'
+                              'en': 'Application form',
+                            'vi': 'Đơn ứng tuyển'
                           },
-                          "updateable":
-                          [
+        "updateable":
+        [
                               RoleStates.ADMIN.name,
                               RoleStates.JOB_MANAGER.name,
-                      ]})
-    candidate = relationship(
-        "Candidate", back_populates="interviewer_assignments")
+                          ]})
+    application_form = relationship(
+        "ApplicationForm", back_populates="interviewer_assignments")
 
 
 class ApplicationForm(Base, ReprAble):
@@ -605,20 +614,22 @@ class ApplicationForm(Base, ReprAble):
     __tablename__ = 'application_forms'
     id = Column(Integer, primary_key=True)
     cv = Column(LargeBinary,
-                info=
-                {
+                info={
                     'description':
                     {
                         'en': 'CV',
                         'vn': 'CV'
                     },
-                    'filetype':'pdf',
+                    'filetype': FileTypes.PDF_FILE.value,
                     'updateable':
                     [
                         RoleStates.ADMIN.name,
                         RoleStates.CANDIDATE.name
                     ]
                 })
+    # 1-n relationship
+    interviewer_assignments =  relationship(argument='InterviewerAssignment', back_populates='application_form')
+
     # n-1 relationships
     candidate_id = Column(Integer, ForeignKey('candidates.id'),
                           nullable=False,
@@ -626,78 +637,161 @@ class ApplicationForm(Base, ReprAble):
                               'en': 'Candidate',
                               'vn': 'Ứng viên'
                           },
-                          'hide':
-                          [
+        'hide':
+        [
                               RoleStates.CANDIDATE.name
                           ]})
     candidate = relationship("Candidate", back_populates="application_forms")
     job_id = Column(Integer, ForeignKey('jobs.id'),
                     nullable=False,
-                          info={'description': {
-                              'en': 'Apply to job',
+                    info={'description': {
+                        'en': 'Apply to job',
                               'vn': 'Vị trí ứng tuyển'
-                          }})
+                    }})
     job = relationship("Job", back_populates="application_forms")
 
-
-class Requisition(Base, ReprAble):
-    __tablename__ = 'requisitions'
-    id = Column(Integer, primary_key=True)
-    name = Column(String(length=STRING_LENGTH),
-                  info={'description': {
-                      'en': 'Requisition Name',
-                      'vn': 'Tên yêu cầu tuyển dụng'
-                  }})
-
     # n-1 relationships
-    requisition_statuse_id = Column(
-        Integer, ForeignKey('requisition_statuses.id'),
+    application_form_status_id = Column(
+        Integer, ForeignKey('application_form_statuses.id'),
         info={'description': {
-            'en': 'Requisition Status',
-            'vn': 'Trạng thái yêu cầu tuyển dụng'
-        }})
-    requisition_statuse = relationship(
-        "RequisitionStatus", back_populates="requisitions")
+            'en': 'Application form status',
+            'vn': 'Trạng thái hồ sơ ứng tuyển'
+        },
+        'hide':
+        [
+            RoleStates.CANDIDATE.name
+        ]})
+    application_form_status = relationship(
+        "ApplicationFormStatus", back_populates="application_forms")
 
 
 class Gender(Base, ReprAble):
+    info = {
+        'description': {
+            'en': 'Genders',
+            'vi': 'Giới tính'
+        },
+        'permission':
+        {
+            # Permission at List page
+            'create':
+            [
+                RoleStates.ADMIN.name
+            ],
+            'read':
+            [
+                RoleStates.ADMIN.name
+            ],
+            'update':
+            [
+                RoleStates.ADMIN.name
+            ],
+            'delete':
+            [
+                RoleStates.ADMIN.name
+            ]
+        }
+    }
     __tablename__ = 'genders'
     id = Column(Integer, primary_key=True)
-    name = Column(String(STRING_LENGTH), nullable=False, unique=True,
+    name = Column(String(STRING_LENGTH),
+                  nullable=False,
+                  unique=True,
                   info={'description': {
-                      'en': 'Gender Name',
-                      'vn': 'Tên giới tính'
+                      'en': 'Gender name',
+                      'vn': 'Giới tính'
                   }})
 
     # 1-n relationships
     users = relationship('User', back_populates='gender')
 
+class ApplicationForm_Status(Enum):
+    HIRED = "Hired"
+    INTERVIEW_PENDING = "Interview pending"
+    REJECT = "Reject"
 
-class RequisitionStatus(Base, ReprAble):
+
+class ApplicationFormStatus(Base, ReprAble):
     info = {
         'description': {
-            'en': 'Requisition statuses',
-            'vi': 'Trạng thái ứng tuyển'
+            'en': 'Appliction form statuses',
+            'vi': 'Trạng thái hồ sơ ứng tuyển'
+        },
+        'permission':
+        {
+            # Permission at List page
+            'create':
+            [
+                RoleStates.ADMIN.name
+            ],
+            'read':
+            [
+                RoleStates.ADMIN.name
+            ],
+            'update':
+            [
+                RoleStates.ADMIN.name
+            ],
+            'delete':
+            [
+                RoleStates.ADMIN.name
+            ]
         }
     }
-    __tablename__ = 'requisition_statuses'
+    __tablename__ = 'application_form_statuses'
     id = Column(Integer, primary_key=True)
     name = Column(String(length=STRING_LENGTH),
+                  unique=True,
+                  nullable=False,
                   info={'description': {
-                      'en': 'Requisition Status Name',
-                      'vn': 'Tên trạng thái yêu cầu tuyển dụng'
+                      'en': 'Appliction form status name',
+                      'vn': 'Tên trạng thái hồ sơ ứng tuyển'
                   }})
     status = Column(String(length=STRING_LENGTH),
                     info={'description': {
-                        'en': 'Requisition Status',
-                        'vn': 'Trạng thái yêu cầu tuyển dụng'
+                        'en': 'Appliction form status',
+                        'vn': 'Trạng thái hồ sơ ứng tuyển'
                     }})
 
     # 1-n relationships
-    requisitions = relationship(
-        "Requisition", back_populates="requisition_statuse")
+    application_forms = relationship(
+        "ApplicationForm", back_populates="application_form_status")
+
+def isPermissionToMe(model, my_role, operand: str):
+    """ operand = create/read/update/delete """
+    # Get the 'permission' dictionary, default to an empty dictionary if it doesn't exist
+    permission_info = model.info.get('permission', {})
+
+    # Get the 'operand' list from the 'permission' dictionary, default to an empty list if it doesn't exist
+    read_permission_roles = permission_info.get(operand, [])
+
+    # Check if my_role is in the 'operand' list
+    is_allowed = my_role in read_permission_roles
+
+    return is_allowed
+
+def getColumnFileType(column):
+    return column.info.get('filetype', None)
+
+def getColumnHideToRoles(column):
+    return column.info.get('hide', [])
+
+def isThisColumnHideToMe(column, my_role):
+    hide_to_roles = getColumnHideToRoles(column=column)
+    is_hide = my_role in hide_to_roles
+    return is_hide
+
+def getColumnUpdateableToRoles(column):
+    return column.info.get('updateable', [])
+
+def isUpdateableToMe(column, my_role):
+    updateable_to_roles = getColumnUpdateableToRoles(column=column)
+    is_updateable = my_role in updateable_to_roles
+    return is_updateable
+
+def getColumnTranslation(column, language):
+    return column.info.get('description', {}).get(language, column.name)
 
 
 all_models = [obj for obj in globals().values() if isinstance(
     obj, type) and issubclass(obj, Base) and obj != Base]
-

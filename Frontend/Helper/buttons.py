@@ -73,13 +73,13 @@ class Widget_FilePath(QWidget):
                  parent: QWidget = None,
                  data:bytes = None,
                  file_type: str = FileTypes.ALL_FILE.value,
-                 callback_on_upload=None,
-                 callback_on_download=None) -> None:
+                 is_upload=None,
+                 is_download=None) -> None:
         super().__init__(parent)
         self.data = data
         self.file_types = file_type
-        self.callback_on_upload = callback_on_upload
-        self.callback_on_download = callback_on_download
+        self.callback_on_upload = is_upload
+        self.callback_on_download = is_download
         self.layout = QHBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.label_file_path = QLabel(self)
@@ -90,14 +90,16 @@ class Widget_FilePath(QWidget):
         self.layout.addWidget(self.label_file_path)
         frame = QFrame(self)
         layout = QHBoxLayout(frame)
-        if callback_on_upload:
+        if is_upload:
             self.button_upload = ActionButton(parent=self, icon_path=icon_upload_file_path)
             layout.addWidget(self.button_upload)
             self.button_upload.clicked.connect(self.on_upload)
-        if callback_on_download:
+        if is_download:
             self.button_download = ActionButton(parent=self, icon_path=icon_download_file_path)
             layout.addWidget(self.button_download)
             self.button_download.clicked.connect(self.on_download)
+            if not self.data:
+                self.button_download.setDisabled(True)
         self.layout.addWidget(frame)
 
     def on_download(self):
@@ -105,9 +107,9 @@ class Widget_FilePath(QWidget):
             return
         # Open a file dialog to get the save path
         file_dialog = QFileDialog(self)
-        file_dialog.setDefaultSuffix('png')
+        file_dialog.setNameFilter(self.file_types)
         file_path, _ = file_dialog.getSaveFileName(
-            self, 'Save as', '', 'Images (*.png)')
+            self, 'Save as', '', self.file_types)
         if not file_path:
             return
         bytes_to_file(file_path=file_path,

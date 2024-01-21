@@ -248,6 +248,8 @@ def populate_table(table_widget: QTableWidget, instances: list, model):
             if column.primary_key:
                 # If the column is the primary key, use the value directly
                 item_text = str(getattr(instance, column.name))
+            if getColumnFileType(column=column) == FileTypes.PDF_FILE.value:
+                item_text = "PDF file"
             elif column.foreign_keys:
                 # Get the class of the related model
                 related_model_class = list(column.foreign_keys)[0].column.table
@@ -816,8 +818,15 @@ class Widget_ReadUpdateDelete(QWidget):
             is_not_updateable = not isUpdateableToMe(
                 column=column, my_role=my_role) or not callback_update
 
-            if getColumnFileType(column=column) == FileTypes.PDF_FILE.value:
-                # TODO
+            # Check if the column is a File column
+            file_type = getColumnFileType(column=column)
+            if file_type == FileTypes.PDF_FILE.value:
+                self.widget_cv_holder = Widget_FilePath(parent=self,
+                                                        data=getattr(self.obj, column.name, None),
+                                                file_type=FileTypes.PDF_FILE.value,
+                                                is_upload='dummy string',
+                                                is_download='dummy string')
+                container_layout.addWidget(self.widget_cv_holder)
                 continue
 
             if is_not_updateable:
@@ -1227,8 +1236,8 @@ class Widget_Create_MyApplicationForm(QWidget):
 
         self.widget_cv_holder = Widget_FilePath(parent=self,
                                                 file_type=FileTypes.PDF_FILE.value,
-                                                callback_on_upload='dummy string',
-                                                callback_on_download='dummy string')
+                                                is_upload='dummy string',
+                                                is_download='dummy string')
         container_layout.addWidget(self.widget_cv_holder)
         is_nullable = ApplicationForm.job_id.nullable
         if is_nullable:

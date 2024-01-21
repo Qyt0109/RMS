@@ -1,66 +1,74 @@
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QFileDialog, QApplication
-from PyQt6.QtGui import QIcon, QPixmap
-from PyQt6.QtCore import QSize
-from enum import Enum
+import sys
+from PyQt6.QtWidgets import *
+from PyQt6.QtGui import *
+from PyQt6.QtCore import Qt
+import fitz  # PyMuPDF library
 
-class FileTypes(Enum):
-    ALL_FILE = 'All Files (*)'
-    IMAGE_FILE = 'Image Files (*.png *.jpg *.bmp *.gif)'
-    PDF_FILE = 'PDF Files (*.pdf)'
+class PDFViewer(QMainWindow):
+    def __init__(self):
+        super().__init__()
 
-class Widget_FilePath(QWidget):
-    def __init__(self, parent: QWidget = None, text: str = None, file_type: str = FileTypes.ALL_FILE,
-                 callback_on_upload=None, callback_on_download=None) -> None:
-        super().__init__(parent)
-        self.file_types = file_type
-        self.callback_on_upload = callback_on_upload
-        self.callback_on_download = callback_on_download
-        self.layout = QVBoxLayout(self)
+        self.setWindowTitle("PDF Viewer")
+        self.setGeometry(100, 100, 800, 600)
 
-        if callback_on_upload:
-            self.button_upload = QPushButton(parent=self, text='Upload')
-            self.button_upload.setIcon(QIcon(QPixmap("icon_upload.png")))  # Replace with your actual icon path
-            self.button_upload.clicked.connect(self.on_upload)
-            self.layout.addWidget(self.button_upload)
+        self.central_widget = QWidget(self)
+        self.setCentralWidget(self.central_widget)
 
-        if callback_on_download:
-            self.button_download = QPushButton(parent=self, text='Download')
-            self.button_download.setIcon(QIcon(QPixmap("icon_download.png")))  # Replace with your actual icon path
-            self.button_download.clicked.connect(self.on_download)
-            self.layout.addWidget(self.button_download)
+        self.layout = QVBoxLayout(self.central_widget)
 
-    def on_download(self):
-        file_dialog = QFileDialog(self)
-        #file_dialog.setDefaultSuffix('png')
+        self.button_image = QPushButton(self)
+        self.layout.addWidget(self.button_image)
 
-        # Set the file type filter based on the specified file_type
-        file_dialog.setNameFilter(self.file_types)
+        self.load_button = QPushButton("Load PDF", self)
+        self.load_button.clicked.connect(self.load_pdf)
+        self.layout.addWidget(self.load_button)
 
-        file_path, _ = file_dialog.getSaveFileName(self, 'Save As', '', self.file_types)
+        self.page_number = 0
+        self.doc = None
 
-        if not file_path:
-            return
-        self.callback_on_download(file_path=file_path)
-        print(file_path)
+    def load_pdf(self):
+        file_dialog = QFileDialog()
+        file_dialog.setNameFilter("PDF Files (*.pdf)")
+        file_dialog.setFileMode(QFileDialog.FileMode.ExistingFile)
+
+        try:
+            if file_dialog.exec() == QFileDialog.DialogCode.Accepted:
+                file_path = file_dialog.selectedFiles()[0]
+                self.doc = fitz.open(file_path)
+                self.show_page()
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error loading PDF: {str(e)}")
 
 
-    def on_upload(self):
-        file_dialog = QFileDialog(self)
-        file_path, _ = file_dialog.getOpenFileName(self, 'File path', '', self.file_types)
+    def show_page(self):
+        if self.doc is not None and 0 <= self.page_number < self.doc.page_count:
+            page = self.doc[self.page_number]
+            image = page.get_pixmap().to_image()
+            
+            q_image = QImage(
+                image.samples, image.width, image.height, image.stride,
+                QImage.Format.FormatRGB32
+            )
 
-        if not file_path:
-            return
-        
-        self.callback_on_upload(file_path=file_path)
+            pixmap = QPixmap.fromImage(q_image)
+            self.button_image.setIcon(QIcon(pixmap))
 
-        print(file_path)
 
-def run_app():
-    app = QApplication([])
-    widget = Widget_FilePath(text="File Path Widget", file_type=FileTypes.PDF_FILE.value,
-                 callback_on_upload='None', callback_on_download='None')
-    widget.show()
-    app.exec()
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key.Key_Left:
+            self.page_number = max(0, self.page_number - 1)
+            self.show_page()
 
-if __name__ == '__main__':
-    run_app()
+        elif event.key() == Qt.Key.Key_Right:
+            self.page_number = min(self.page_number + 1, self.doc.page_count() - 1)
+            self.show_page()
+
+
+def main():
+    app = QApplication(sys.argv)
+    viewer = PDFViewer()
+    viewer.show()
+    sys.exit(app.exec())
+
+if __name__ == "__main__":
+    main()

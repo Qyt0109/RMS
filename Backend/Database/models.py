@@ -227,6 +227,32 @@ class User(Base, ReprAble):
 
 
 class Admin(User):
+    info = {
+        'description': {
+            'en': 'Admin',
+            'vi': 'Quản trị viên'
+        },
+        'permission':
+        {
+            # Permission at List page
+            'create':
+            [
+                RoleStates.ADMIN.name
+            ],
+            'read':
+            [
+                RoleStates.ADMIN.name
+            ],
+            'update':
+            [
+                RoleStates.ADMIN.name
+            ],
+            'delete':
+            [
+                RoleStates.ADMIN.name
+            ]
+        }
+    }
     __tablename__ = 'admins'
     id = Column(Integer, ForeignKey('users.id'), primary_key=True)
     # Other Admin's column here...
@@ -242,6 +268,26 @@ class Candidate(User):
         'description': {
             'en': 'Candidate',
             'vi': 'Ứng viên'
+        },
+        'permission':
+        {
+            # Permission at List page
+            'create':
+            [
+                RoleStates.ADMIN.name
+            ],
+            'read':
+            [
+                RoleStates.ADMIN.name
+            ],
+            'update':
+            [
+                RoleStates.ADMIN.name
+            ],
+            'delete':
+            [
+                RoleStates.ADMIN.name
+            ]
         }
     }
     __tablename__ = 'candidates'
@@ -339,6 +385,26 @@ class JobManager(User, ReprAble):
         'description': {
             'en': 'Job Manager',
             'vi': 'Người quản lý công việc'
+        },
+        'permission':
+        {
+            # Permission at List page
+            'create':
+            [
+                RoleStates.ADMIN.name
+            ],
+            'read':
+            [
+                RoleStates.ADMIN.name
+            ],
+            'update':
+            [
+                RoleStates.ADMIN.name
+            ],
+            'delete':
+            [
+                RoleStates.ADMIN.name
+            ]
         }
     }
     __tablename__ = 'job_managers'
@@ -363,6 +429,26 @@ class JobStatus(Base, ReprAble):
         'description': {
             'en': 'Job Status',
             'vi': 'Trạng thái công việc'
+        },
+        'permission':
+        {
+            # Permission at List page
+            'create':
+            [
+                RoleStates.ADMIN.name
+            ],
+            'read':
+            [
+                RoleStates.ADMIN.name
+            ],
+            'update':
+            [
+                RoleStates.ADMIN.name
+            ],
+            'delete':
+            [
+                RoleStates.ADMIN.name
+            ]
         }
     }
     __tablename__ = 'job_statuses'
@@ -769,6 +855,9 @@ def isPermissionToMe(model, my_role, operand: str):
     is_allowed = my_role in read_permission_roles
 
     return is_allowed
+
+def getModelDescription(model, language):
+    return model.info.get('description', {}).get(language, '')
 
 def getColumnFileType(column):
     return column.info.get('filetype', None)

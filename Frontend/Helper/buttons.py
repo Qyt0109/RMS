@@ -2,6 +2,7 @@ from PyQt6.QtWidgets import *
 from PyQt6.QtGui import *
 from PyQt6.QtCore import Qt
 from Backend.Database.models import FileTypes
+from Frontend.Helper.popups import *
 from Backend.Services.file_handler import *
 
 icon_download_file_path = "Frontend/Resources/Bootstrap/file-earmark-arrow-down.png"
@@ -111,6 +112,7 @@ class Widget_FilePath(QWidget):
         file_path, _ = file_dialog.getSaveFileName(
             self, 'Save as', '', self.file_types)
         if not file_path:
+            
             return
         bytes_to_file(file_path=file_path,
                       byte_data=self.data)

@@ -54,9 +54,23 @@ translate = {
         'en': 'Create',
         'vi': 'Tạo'
     },
+    'created': {
+        'en':'Created successfully!',
+        'vi': 'Đã tạo thành công!'
+    },
     'cancel': {
         'en': 'Cancel',
         'vi': 'Huỷ'
+    },
+    'action completed':
+    {
+        'en':'Action completed successfully!',
+        'vi':'Thực thi thành công!'
+    },
+    'action failed':
+    {
+        'en':'Failed to do the action!\nPlease check and try again.',
+        'vi':'Thực thi thất bại!\nXin kiểm tra và thử lại.'
     },
     'update': {
         'en': 'Update',
@@ -259,7 +273,7 @@ def populate_table(table_widget: QTableWidget, instances: list, model):
                 # Fetch the corresponding instance using the foreign key value
                 related_instance = session.query(
                     related_model_class).filter_by(id=foreign_key_value).first()
-                if str(related_model_class) in ['interviewers', 'job_managers', 'candidates']:
+                if str(related_model_class) in ['interviewers', 'job_managers', 'candidates', 'admins']:
                     status, user = CRUD_User.read(id=related_instance.id)
                     item_text = str(user.name)
                 else:
@@ -840,7 +854,7 @@ class Widget_ReadUpdateDelete(QWidget):
                     # Fetch the corresponding instance using the foreign key value
                     instance = session.query(related_model_class).filter_by(
                         id=foreign_key_value).first()
-                    if str(related_model_class) in ['interviewers', 'job_managers', 'candidates']:
+                    if str(related_model_class) in ['interviewers', 'job_managers', 'candidates', 'admins']:
                         status, user = CRUD_User.read(id=instance.id)
                         label_value_text = str(user.name)
                     else:
@@ -890,7 +904,7 @@ class Widget_ReadUpdateDelete(QWidget):
                     # Fetch the corresponding instance using the foreign key value
                     related_instances = session.query(related_model).all()
                     for instance in related_instances:
-                        if str(related_model) in ['interviewers', 'job_managers', 'candidates']:
+                        if str(related_model) in ['interviewers', 'job_managers', 'candidates', 'admins']:
                             status, user = CRUD_User.read(id=instance.id)
                             item_text = str(user.name)
                         else:
@@ -1373,7 +1387,7 @@ class Widget_Create(QWidget):
 
                         for instance in related_instances:
 
-                            if str(related_model) in ['interviewers', 'job_managers', 'candidates']:
+                            if str(related_model) in ['interviewers', 'job_managers', 'candidates', 'admins']:
                                 status, user = CRUD_User.read(id=instance.id)
 
                                 combobox.addItem(str(user.name), instance.id)

@@ -31,8 +31,8 @@ from Backend.Database.sessions import *
 # endregion Import Modules
 
 """ #FIXME TEST ONLY """
-TEST_USERNAME = 'candidate1'
-TEST_PASSWORD = 'candidate'
+TEST_USERNAME = 'interviewer1'
+TEST_PASSWORD = 'interviewer'
 TEST_DEV = True
 if TEST_DEV:
     from Backend.Services.db_test import *
@@ -550,7 +550,9 @@ class MyApplication(QMainWindow):
         status, result = CRUD_Model.delete(id=obj.id)
         print(status, result)
         if status != CRUD_Status.DELETED:
+            QMessageBox.warning(self, "FAILED TO DELETE", get_translation('action failed', language=LANGUAGE))
             return
+        QMessageBox.about(self, "DELETED", get_translation('action completed', language=LANGUAGE))
         self.toPage_Database_Table(model=model)
 
     def updateData(self, obj, **kwargs):
@@ -560,7 +562,9 @@ class MyApplication(QMainWindow):
                                            **kwargs)
         print(status, result)
         if status != CRUD_Status.UPDATED:
+            QMessageBox.warning(self, "FAILED TO UPDATE", get_translation('action failed', language=LANGUAGE))
             return
+        QMessageBox.about(self, "UPDATED", get_translation('action completed', language=LANGUAGE))
         self.toPage_Database_Table(model=model)
 
     def toPage_Database_Table_Read(self, obj, model):
@@ -596,7 +600,9 @@ class MyApplication(QMainWindow):
         status, result = CRUD_Model.create(**kwargs)
         print(status, result)
         if status != CRUD_Status.CREATED:
+            QMessageBox.warning(self, "FAILED TO CREATE", get_translation('action failed', language=LANGUAGE))
             return
+        QMessageBox.about(self, "CREATED", get_translation('action completed', language=LANGUAGE))
         self.toPage_Database_Table(model=model)
     """ Page Database """
 

@@ -24,8 +24,9 @@ db_password = db_password
 ECHO = True
 TEST = True
 
-connection_url_string = f"{db_type}+{db_connector_module}://{db_username}:{db_password}@{
-    db_host}:{db_port}/test?ssl_ca={db_ssl_ca_path}&ssl_verify_cert=true&ssl_verify_identity=true"
+connection_url_string = db_type + db_connector_module + "://" + db_username + ":" + db_password + "@" + \
+    db_host + ":" + db_port + "/test?ssl_ca=" + db_ssl_ca_path + \
+    "&ssl_verify_cert=true&ssl_verify_identity=true"
 if TEST:
     engine = create_engine('sqlite:///Backend/Database/db.sqlite', echo=ECHO)
 else:

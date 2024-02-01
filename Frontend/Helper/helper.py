@@ -55,7 +55,7 @@ translate = {
         'vi': 'Tạo'
     },
     'created': {
-        'en':'Created successfully!',
+        'en': 'Created successfully!',
         'vi': 'Đã tạo thành công!'
     },
     'cancel': {
@@ -64,13 +64,13 @@ translate = {
     },
     'action completed':
     {
-        'en':'Action completed successfully!',
-        'vi':'Thực thi thành công!'
+        'en': 'Action completed successfully!',
+        'vi': 'Thực thi thành công!'
     },
     'action failed':
     {
-        'en':'Failed to do the action!\nPlease check and try again.',
-        'vi':'Thực thi thất bại!\nXin kiểm tra và thử lại.'
+        'en': 'Failed to do the action!\nPlease check and try again.',
+        'vi': 'Thực thi thất bại!\nXin kiểm tra và thử lại.'
     },
     'update': {
         'en': 'Update',
@@ -836,10 +836,11 @@ class Widget_ReadUpdateDelete(QWidget):
             file_type = getColumnFileType(column=column)
             if file_type == FileTypes.PDF_FILE.value:
                 self.widget_cv_holder = Widget_FilePath(parent=self,
-                                                        data=getattr(self.obj, column.name, None),
-                                                file_type=FileTypes.PDF_FILE.value,
-                                                is_upload='dummy string',
-                                                is_download='dummy string')
+                                                        data=getattr(
+                                                            self.obj, column.name, None),
+                                                        file_type=FileTypes.PDF_FILE.value,
+                                                        is_upload='dummy string',
+                                                        is_download='dummy string')
                 container_layout.addWidget(self.widget_cv_holder)
                 continue
 
@@ -1238,11 +1239,11 @@ class Widget_Create_MyApplicationForm(QWidget):
 
         is_nullable = ApplicationForm.cv.nullable
         if is_nullable:
-            label_cv_text = f"{getColumnTranslation(
-                column=ApplicationForm.cv, language=LANGUAGE)}:"
+            label_cv_text = getColumnTranslation(
+                column=ApplicationForm.cv, language=LANGUAGE) + ":"
         else:
-            label_cv_text = f"{getColumnTranslation(
-                column=ApplicationForm.cv, language=LANGUAGE)} (*):"
+            label_cv_text = getColumnTranslation(
+                column=ApplicationForm.cv, language=LANGUAGE) + " (*):"
         self.label_cv = QLabel(parent=self, text=label_cv_text)
         if not is_nullable:
             self.label_cv.setStyleSheet("color: rgb(153, 0, 0)")
@@ -1255,11 +1256,11 @@ class Widget_Create_MyApplicationForm(QWidget):
         container_layout.addWidget(self.widget_cv_holder)
         is_nullable = ApplicationForm.job_id.nullable
         if is_nullable:
-            label_job_text = f"{getColumnTranslation(
-                column=ApplicationForm.job_id, language=LANGUAGE)}:"
+            label_job_text = getColumnTranslation(
+                column=ApplicationForm.job_id, language=LANGUAGE) + ":"
         else:
-            label_job_text = f"{getColumnTranslation(
-                column=ApplicationForm.job_id, language=LANGUAGE)} (*):"
+            label_job_text = getColumnTranslation(
+                column=ApplicationForm.job_id, language=LANGUAGE) + " (*):"
         self.label_job = QLabel(text=label_job_text, parent=self)
         if not is_nullable:
             self.label_cv.setStyleSheet("color: rgb(153, 0, 0)")

@@ -490,7 +490,7 @@ class MyApplication(QMainWindow):
             CRUD_User.delete(user.id)
             self.toPage_List_Users()
 
-    """ Page Database """
+    # region Page Database
 
     def toPage_Database(self, **kwargs):
         self.ui.stackedWidget.setCurrentWidget(self.ui.page_Database)
@@ -525,8 +525,33 @@ class MyApplication(QMainWindow):
                                                        callback_delete=self.toPage_Database_Table_Delete)
         parent_layout.addWidget(widget_table)
 
-    def toPage_Database_Table_Delete(self, obj, **kwargs):
-        self.deleteData(obj)
+    def toPage_Database_Table_CreateData(self, model):
+        self.ui.stackedWidget.setCurrentWidget(self.ui.page_Database)
+        parent = self.ui.page_Database
+        parent_layout = parent.layout()
+        clearAllWidgets(parent)
+        widget_create = Widget_Create(parent=parent,
+                                      model=model,
+                                      callback_back=self.toPage_Database_Table,
+                                      callback_cancel=self.toPage_Database_Table,
+                                      callback_create=self.createData)
+
+        parent_layout.addWidget(widget_create)
+
+    def toPage_Database_Table_Read(self, obj, model):
+        self.ui.stackedWidget.setCurrentWidget(self.ui.page_Database)
+        parent = self.ui.page_Database
+        parent_layout = parent.layout()
+        clearAllWidgets(parent)
+        widget_read = Widget_ReadUpdateDelete(parent=parent,
+                                              obj=obj,
+                                              model=model,
+                                              callback_back=self.toPage_Database_Table,
+                                              callback_cancel=self.toPage_Database_Table,
+                                              callback_update=None,
+                                              callback_delete=None)
+
+        parent_layout.addWidget(widget_read)
 
     def toPage_Database_Table_Update(self, obj, model, **kwargs):
         self.ui.stackedWidget.setCurrentWidget(self.ui.page_Database)
@@ -544,15 +569,19 @@ class MyApplication(QMainWindow):
 
         parent_layout.addWidget(widget_update)
 
-    def deleteData(self, obj, **kwargs):
-        model = type(obj)
+    def toPage_Database_Table_Delete(self, obj, **kwargs):
+        self.deleteData(obj)
+
+    def createData(self, model, **kwargs):
         CRUD_Model = get_crud_class(model_class=model)
-        status, result = CRUD_Model.delete(id=obj.id)
+        status, result = CRUD_Model.create(**kwargs)
         print(status, result)
-        if status != CRUD_Status.DELETED:
-            QMessageBox.warning(self, "FAILED TO DELETE", get_translation('action failed', language=LANGUAGE))
+        if status != CRUD_Status.CREATED:
+            QMessageBox.warning(self, "FAILED TO CREATE", get_translation(
+                'action failed', language=LANGUAGE))
             return
-        QMessageBox.about(self, "DELETED", get_translation('action completed', language=LANGUAGE))
+        QMessageBox.about(self, "CREATED", get_translation(
+            'action completed', language=LANGUAGE))
         self.toPage_Database_Table(model=model)
 
     def updateData(self, obj, **kwargs):
@@ -562,51 +591,28 @@ class MyApplication(QMainWindow):
                                            **kwargs)
         print(status, result)
         if status != CRUD_Status.UPDATED:
-            QMessageBox.warning(self, "FAILED TO UPDATE", get_translation('action failed', language=LANGUAGE))
+            QMessageBox.warning(self, "FAILED TO UPDATE", get_translation(
+                'action failed', language=LANGUAGE))
             return
-        QMessageBox.about(self, "UPDATED", get_translation('action completed', language=LANGUAGE))
+        QMessageBox.about(self, "UPDATED", get_translation(
+            'action completed', language=LANGUAGE))
         self.toPage_Database_Table(model=model)
 
-    def toPage_Database_Table_Read(self, obj, model):
-        self.ui.stackedWidget.setCurrentWidget(self.ui.page_Database)
-        parent = self.ui.page_Database
-        parent_layout = parent.layout()
-        clearAllWidgets(parent)
-        widget_read = Widget_ReadUpdateDelete(parent=parent,
-                                              obj=obj,
-                                              model=model,
-                                              callback_back=self.toPage_Database_Table,
-                                              callback_cancel=self.toPage_Database_Table,
-                                              callback_update=None,
-                                              callback_delete=None)
-
-        parent_layout.addWidget(widget_read)
-
-    def toPage_Database_Table_CreateData(self, model):
-        self.ui.stackedWidget.setCurrentWidget(self.ui.page_Database)
-        parent = self.ui.page_Database
-        parent_layout = parent.layout()
-        clearAllWidgets(parent)
-        widget_create = Widget_Create(parent=parent,
-                                      model=model,
-                                      callback_back=self.toPage_Database_Table,
-                                      callback_cancel=self.toPage_Database_Table,
-                                      callback_create=self.createData)
-
-        parent_layout.addWidget(widget_create)
-
-    def createData(self, model, **kwargs):
+    def deleteData(self, obj, **kwargs):
+        model = type(obj)
         CRUD_Model = get_crud_class(model_class=model)
-        status, result = CRUD_Model.create(**kwargs)
+        status, result = CRUD_Model.delete(id=obj.id)
         print(status, result)
-        if status != CRUD_Status.CREATED:
-            QMessageBox.warning(self, "FAILED TO CREATE", get_translation('action failed', language=LANGUAGE))
+        if status != CRUD_Status.DELETED:
+            QMessageBox.warning(self, "FAILED TO DELETE", get_translation(
+                'action failed', language=LANGUAGE))
             return
-        QMessageBox.about(self, "CREATED", get_translation('action completed', language=LANGUAGE))
+        QMessageBox.about(self, "DELETED", get_translation(
+            'action completed', language=LANGUAGE))
         self.toPage_Database_Table(model=model)
-    """ Page Database """
 
 
+    # endregion Page Database
 if __name__ == "__main__":
     app = QApplication([])
     window = MyApplication()

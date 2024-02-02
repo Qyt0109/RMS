@@ -523,7 +523,7 @@ class Widget_Database_Table(QWidget):
                                       header_labels=hide_columns)
 
         self.layout.addWidget(self.table_widget)
-    
+
     def select_button_clicked(self, id):
         if not self.callback_select:
             return
@@ -685,13 +685,13 @@ class Widget_Database_Table_Instances(QWidget):
             if is_update:
                 if callback_update:
                     update_button = ActionButton(parent=self,
-                                                icon_path=icon_edit_path,
-                                                stylesheet_normal="background-color: rgba(255, 255, 0, 80);",
-                                                stylesheet_hover="background-color: rgba(255, 255, 0, 140);")
+                                                 icon_path=icon_edit_path,
+                                                 stylesheet_normal="background-color: rgba(255, 255, 0, 80);",
+                                                 stylesheet_hover="background-color: rgba(255, 255, 0, 140);")
                     update_button.clicked.connect(
                         partial(self.update_button_clicked,
                                 id=get_id_for_row(table_widget=self.table_widget,
-                                                row=row)))
+                                                  row=row)))
                     button_layout.addWidget(update_button)
             if is_delete:
                 delete_button = ActionButton(icon_path=icon_delete_path,
@@ -1359,6 +1359,135 @@ class Widget_Create_MyApplicationForm(QWidget):
             return widget.text() if widget.text() != '' else None
 
 
+class Widget_Create_InterviewerAssignment(QWidget):
+    def __init__(self, parent: QWidget, job_manager, application_form, callback_back=None, callback_cancel=None, callback_create=None) -> None:
+        super().__init__(parent)
+        self.layout = QVBoxLayout(self)
+        self.job_manager = job_manager
+        self.application_form = application_form
+        self.model = InterviewerAssignment
+
+        frame_buttons = QFrame(self)
+        frame_buttons_layout = QHBoxLayout(frame_buttons)
+        # Set layout alignment to the left
+        frame_buttons_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        pushButton_Back = ActionButton(
+            parent=self, text=get_translation('back'))
+        pushButton_Back.clicked.connect(partial(self.back_button_clicked,
+                                                callback_back=callback_back))
+        frame_buttons_layout.addWidget(pushButton_Back)
+        self.layout.addWidget(frame_buttons)
+
+        # Create a scrollable widget
+        scrollable_widget = QScrollArea(self)
+        scrollable_widget.setWidgetResizable(True)
+
+        # Create a container widget to hold the layout
+        container_widget = QWidget(self)
+        container_layout = QVBoxLayout(container_widget)
+
+        container_layout.addWidget(QLabel(parent=self, text="Creating Interview Assignment for:\nCandidate: " +
+                                   application_form.candidate.name + "\nApplication Form: " + application_form.name))
+
+        is_nullable = InterviewerAssignment.interview_location.nullable
+        if is_nullable:
+            label_interview_location_text = getColumnTranslation(
+                column=InterviewerAssignment.interview_location, language=LANGUAGE) + ":"
+        else:
+            label_interview_location_text = getColumnTranslation(
+                column=InterviewerAssignment.interview_location, language=LANGUAGE) + " (*):"
+        self.label_interview_location = QLabel(
+            parent=self, text=label_interview_location_text)
+        if not is_nullable:
+            self.label_interview_location.setStyleSheet(
+                "color: rgb(153, 0, 0)")
+        container_layout.addWidget(self.label_interview_location)
+
+        self.lineEdit_interview_location = QLineEdit()
+        container_layout.addWidget(self.lineEdit_interview_location)
+
+        is_nullable = InterviewerAssignment.interview_datetime.nullable
+        if is_nullable:
+            label_interview_datetime_text = getColumnTranslation(
+                column=InterviewerAssignment.interview_datetime, language=LANGUAGE) + ":"
+        else:
+            label_interview_datetime_text = getColumnTranslation(
+                column=InterviewerAssignment.interview_datetime, language=LANGUAGE) + " (*):"
+        self.label_interview_datetime = QLabel(
+            parent=self, text=label_interview_datetime_text)
+        if not is_nullable:
+            self.label_interview_datetime.setStyleSheet(
+                "color: rgb(153, 0, 0)")
+        container_layout.addWidget(self.label_interview_datetime)
+        self.datetime_picker_interview_datetime = QDateTimeEdit(self)
+        self.datetime_picker_interview_datetime.setDateTime(
+            QDateTime.currentDateTime())
+        container_layout.addWidget(self.datetime_picker_interview_datetime)
+
+        is_nullable = InterviewerAssignment.interviewer_id.nullable
+        if is_nullable:
+            label_interviewer_id_text = getColumnTranslation(
+                column=InterviewerAssignment.interviewer_id, language=LANGUAGE) + ":"
+        else:
+            label_interviewer_id_text = getColumnTranslation(
+                column=InterviewerAssignment.interviewer_id, language=LANGUAGE) + " (*):"
+        self.label_interviewer_id = QLabel(
+            parent=self, text=label_interviewer_id_text)
+        if not is_nullable:
+            self.label_interviewer_id.setStyleSheet("color: rgb(153, 0, 0)")
+        container_layout.addWidget(self.label_interviewer_id)
+        self.combobox_interviewer = QComboBox(self)
+        # Add a "None" option as the first item
+        self.combobox_interviewer.addItem("None", None)
+        # Add all instances
+        status, interviewers = CRUD_Interviewer.read_all()
+
+        for interviewer in interviewers:
+            # status, user = CRUD_User.read(interviewer.id)
+            self.combobox_interviewer.addItem(
+                str(interviewer.name), interviewer.id)
+
+        container_layout.addWidget(self.combobox_interviewer)
+
+        # Spacer
+        spacer_widget = QWidget(parent=self)
+        spacer_widget.setSizePolicy(QSizePolicy.Policy.Expanding,
+                                    QSizePolicy.Policy.Expanding)
+        container_layout.addWidget(spacer_widget)
+
+        scrollable_widget.setWidget(container_widget)
+        self.layout.addWidget(scrollable_widget)
+
+        cancel_button = ActionButton(self, get_translation(key='cancel'))
+        cancel_button.clicked.connect(partial(self.cancel_button_clicked,
+                                              callback_cancel=callback_cancel))
+
+        create_button = ActionButton(self, get_translation(key='create'))
+        create_button.clicked.connect(partial(self.create_button_clicked,
+                                              callback_create=callback_create))
+
+        frame_buttons = QFrame(self)
+        frame_buttons_layout = QHBoxLayout(frame_buttons)
+        frame_buttons_layout.addWidget(cancel_button)
+        frame_buttons_layout.addWidget(create_button)
+        self.layout.addWidget(frame_buttons)
+        self.setLayout(self.layout)
+
+    def back_button_clicked(self, callback_back):
+        callback_back(model=self.model)
+
+    def cancel_button_clicked(self, callback_cancel):
+        callback_cancel(model=self.model)
+
+    def create_button_clicked(self, callback_create):
+        callback_create(model=InterviewerAssignment,
+                        interview_location=self.lineEdit_interview_location.text(),
+                        interview_datetime=self.datetime_picker_interview_datetime.dateTime().toPyDateTime(),
+                        interviewer_id=self.combobox_interviewer.currentData(),
+                        job_manager_id=self.job_manager.id,
+                        application_form_id=self.application_form.id)
+
+
 class Widget_Create(QWidget):
     def __init__(self, parent: QWidget, model: Base, callback_back=None, callback_cancel=None, callback_create=None) -> None:
         super().__init__(parent)
@@ -1434,7 +1563,8 @@ class Widget_Create(QWidget):
 
                                 combobox.addItem(str(user.name), instance.id)
                             else:
-                                combobox.addItem(str(instance.name), instance.id)
+                                combobox.addItem(
+                                    str(instance.name), instance.id)
 
                         self.comboboxes[column.name] = combobox
                         container_layout.addWidget(combobox)

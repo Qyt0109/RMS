@@ -619,10 +619,14 @@ class InterviewerAssignment(Base, ReprAble):
                       'en': 'Interview Note',
                       'vn': 'Ghi chú phỏng vấn'
                   },
+        "hide":
+        [
+                      RoleStates.JOB_MANAGER.name
+                  ],
         "updateable":
         [
                       RoleStates.ADMIN.name,
-                      RoleStates.JOB_MANAGER.name,
+                      # RoleStates.JOB_MANAGER.name,
                   ]})
     # n-1 Relationships
     interviewer_id = Column(Integer, ForeignKey('interviewers.id'),
@@ -644,10 +648,14 @@ class InterviewerAssignment(Base, ReprAble):
                                 'en': 'Job Manager',
                                 'vn': 'Người quản lý công việc'
                             },
+        "hide":
+        [
+                                # RoleStates.JOB_MANAGER.name #TODO: Un-comment this
+                            ],
         "updateable":
         [
                                 RoleStates.ADMIN.name,
-                                RoleStates.JOB_MANAGER.name,
+                                # RoleStates.JOB_MANAGER.name,
                             ]})
     job_manager = relationship(
         "JobManager", back_populates="interviewer_assignments")
@@ -657,10 +665,14 @@ class InterviewerAssignment(Base, ReprAble):
                                      'en': 'Application form',
                                      'vi': 'Đơn ứng tuyển'
                                  },
+        "hide":
+        [
+                                     # RoleStates.JOB_MANAGER.name #TODO: Un-comment this
+                                 ],
         "updateable":
         [
                                      RoleStates.ADMIN.name,
-                                     RoleStates.JOB_MANAGER.name,
+                                     # RoleStates.JOB_MANAGER.name,
                                  ]})
     application_form = relationship(
         "ApplicationForm", back_populates="interviewer_assignments")
@@ -695,6 +707,7 @@ class ApplicationForm(Base, ReprAble):
             'delete':
             [
                 RoleStates.ADMIN.name,
+                RoleStates.JOB_MANAGER.name,
                 RoleStates.CANDIDATE.name
             ]
         }
@@ -703,7 +716,7 @@ class ApplicationForm(Base, ReprAble):
     id = Column(Integer, primary_key=True)
     name = Column(String(STRING_LENGTH), nullable=False,
                   info={'description': {
-                      'en': 'Application Form Name',
+                      'en': 'Application Form Title',
                       'vn': 'Tiêu đề hồ sơ ứng tuyển'
                   },
         'updateable':
@@ -758,7 +771,7 @@ class ApplicationForm(Base, ReprAble):
         },
             'hide':
             [
-            RoleStates.CANDIDATE.name
+            # RoleStates.CANDIDATE.name
         ]})
     application_form_status = relationship(
         "ApplicationFormStatus", back_populates="application_forms")

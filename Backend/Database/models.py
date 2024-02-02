@@ -12,11 +12,13 @@ Base = declarative_base()
 
 STRING_LENGTH = 64
 
+
 class OperandStates(Enum):
     CREATE = 'create'
     READ = 'read',
     UPDATE = 'update'
     DELETE = 'delete'
+
 
 class RoleStates(Enum):
     USER = 'Người dùng'
@@ -325,10 +327,10 @@ class Candidate(User):
     # Other Candidate's columns here...
 
     # 1-n relationships
-    
+
     application_forms = relationship(
         "ApplicationForm", back_populates="candidate")
-    
+
     __mapper_args__ = {
         'polymorphic_identity': RoleStates.CANDIDATE.name,
         'polymorphic_load': 'inline'
@@ -650,16 +652,16 @@ class InterviewerAssignment(Base, ReprAble):
     job_manager = relationship(
         "JobManager", back_populates="interviewer_assignments")
     application_form_id = Column(Integer, ForeignKey('application_forms.id'),
-                          nullable=False,
-                          info={'description': {
-                              'en': 'Application form',
-                            'vi': 'Đơn ứng tuyển'
-                          },
+                                 nullable=False,
+                                 info={'description': {
+                                     'en': 'Application form',
+                                     'vi': 'Đơn ứng tuyển'
+                                 },
         "updateable":
         [
-                              RoleStates.ADMIN.name,
-                              RoleStates.JOB_MANAGER.name,
-                          ]})
+                                     RoleStates.ADMIN.name,
+                                     RoleStates.JOB_MANAGER.name,
+                                 ]})
     application_form = relationship(
         "ApplicationForm", back_populates="interviewer_assignments")
 
@@ -699,6 +701,16 @@ class ApplicationForm(Base, ReprAble):
     }
     __tablename__ = 'application_forms'
     id = Column(Integer, primary_key=True)
+    name = Column(String(STRING_LENGTH), nullable=False,
+                  info={'description': {
+                      'en': 'Application Form Name',
+                      'vn': 'Tiêu đề hồ sơ ứng tuyển'
+                  },
+        'updateable':
+        [
+            RoleStates.CANDIDATE.name,
+                      RoleStates.ADMIN.name
+                  ]})
     cv = Column(LargeBinary,
                 info={
                     'description':
@@ -714,7 +726,8 @@ class ApplicationForm(Base, ReprAble):
                     ]
                 })
     # 1-n relationship
-    interviewer_assignments =  relationship(argument='InterviewerAssignment', back_populates='application_form')
+    interviewer_assignments = relationship(
+        argument='InterviewerAssignment', back_populates='application_form')
 
     # n-1 relationships
     candidate_id = Column(Integer, ForeignKey('candidates.id'),
@@ -743,8 +756,8 @@ class ApplicationForm(Base, ReprAble):
             'en': 'Application form status',
             'vn': 'Trạng thái hồ sơ ứng tuyển'
         },
-        'hide':
-        [
+            'hide':
+            [
             RoleStates.CANDIDATE.name
         ]})
     application_form_status = relationship(
@@ -790,6 +803,7 @@ class Gender(Base, ReprAble):
 
     # 1-n relationships
     users = relationship('User', back_populates='gender')
+
 
 class ApplicationForm_Status(Enum):
     HIRED = "Hired"
@@ -843,6 +857,7 @@ class ApplicationFormStatus(Base, ReprAble):
     application_forms = relationship(
         "ApplicationForm", back_populates="application_form_status")
 
+
 def isPermissionToMe(model, my_role, operand: str):
     """ operand = create/read/update/delete """
     # Get the 'permission' dictionary, default to an empty dictionary if it doesn't exist
@@ -856,27 +871,34 @@ def isPermissionToMe(model, my_role, operand: str):
 
     return is_allowed
 
+
 def getModelDescription(model, language):
     return model.info.get('description', {}).get(language, '')
+
 
 def getColumnFileType(column):
     return column.info.get('filetype', None)
 
+
 def getColumnHideToRoles(column):
     return column.info.get('hide', [])
+
 
 def isThisColumnHideToMe(column, my_role):
     hide_to_roles = getColumnHideToRoles(column=column)
     is_hide = my_role in hide_to_roles
     return is_hide
 
+
 def getColumnUpdateableToRoles(column):
     return column.info.get('updateable', [])
+
 
 def isUpdateableToMe(column, my_role):
     updateable_to_roles = getColumnUpdateableToRoles(column=column)
     is_updateable = my_role in updateable_to_roles
     return is_updateable
+
 
 def getColumnTranslation(column, language):
     return column.info.get('description', {}).get(language, column.name)

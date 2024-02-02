@@ -91,6 +91,7 @@ class Widget_FilePath(QWidget):
         self.layout.addWidget(self.label_file_path)
         frame = QFrame(self)
         layout = QHBoxLayout(frame)
+        self.setLabelText()
         if is_upload:
             self.button_upload = ActionButton(parent=self, icon_path=icon_upload_file_path)
             layout.addWidget(self.button_upload)
@@ -102,6 +103,12 @@ class Widget_FilePath(QWidget):
             if not self.data:
                 self.button_download.setDisabled(True)
         self.layout.addWidget(frame)
+
+    def setLabelText(self):
+        if self.data:
+            self.label_file_path.setText("File available")
+        else:
+            self.label_file_path.setText("No file available")
 
     def on_download(self):
         if not self.data:
@@ -123,8 +130,8 @@ class Widget_FilePath(QWidget):
 
         if not file_path:
             return
-        self.label_file_path.setText(file_path)
         self.data = file_to_bytes(file_path=file_path)
+        self.setLabelText()
     
     def get_uploaded_data(self):
         return self.data

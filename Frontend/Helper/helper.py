@@ -241,6 +241,8 @@ def get_id_for_row(table_widget, row):
 def populate_table(table_widget: QTableWidget, instances: list, model):
 
     # Set the number of rows in the table
+    if not instances:
+        return
     table_widget.setRowCount(len(instances))
 
     table_columns = []
@@ -356,12 +358,14 @@ class Widget_Database_Table(QWidget):
                  callback_back=None,
                  callback_create=None,
                  callback_read=None,
+                 callback_select=None,
                  callback_update=None,
                  callback_delete=None) -> None:
         super().__init__(parent)
         self.callback_back = callback_back
         self.callback_create = callback_create
         self.callback_read = callback_read
+        self.callback_select = callback_select
         self.callback_update = callback_update
         self.callback_delete = callback_delete
         self.layout = QVBoxLayout(self)
@@ -484,6 +488,16 @@ class Widget_Database_Table(QWidget):
                             id=get_id_for_row(table_widget=self.table_widget,
                                               row=row)))
                 button_layout.addWidget(delete_button)
+            if self.callback_select:
+                select_button = ActionButton(parent=self,
+                                             icon_path=icon_select_path,
+                                             stylesheet_normal="background-color: rgba(0, 255, 0, 80);",
+                                             stylesheet_hover="background-color: rgba(0, 255, 0, 140);")
+                select_button.clicked.connect(
+                    partial(self.select_button_clicked,
+                            id=get_id_for_row(table_widget=self.table_widget,
+                                              row=row)))
+                button_layout.addWidget(select_button)
             button_layout.setContentsMargins(0, 0, 0, 0)
             button_layout.setSpacing(0)
 
@@ -509,6 +523,14 @@ class Widget_Database_Table(QWidget):
                                       header_labels=hide_columns)
 
         self.layout.addWidget(self.table_widget)
+    
+    def select_button_clicked(self, id):
+        if not self.callback_select:
+            return
+        status, obj = get_crud_class(self.model).read(id)
+        if status != CRUD_Status.FOUND:
+            return
+        self.callback_select(obj=obj, model=self.model)
 
     def read_button_clicked(self, id):
         if not self.callback_read:
@@ -661,15 +683,16 @@ class Widget_Database_Table_Instances(QWidget):
                                               row=row)))
                 button_layout.addWidget(read_button)
             if is_update:
-                update_button = ActionButton(parent=self,
-                                             icon_path=icon_edit_path,
-                                             stylesheet_normal="background-color: rgba(255, 255, 0, 80);",
-                                             stylesheet_hover="background-color: rgba(255, 255, 0, 140);")
-                update_button.clicked.connect(
-                    partial(self.update_button_clicked,
-                            id=get_id_for_row(table_widget=self.table_widget,
-                                              row=row)))
-                button_layout.addWidget(update_button)
+                if callback_update:
+                    update_button = ActionButton(parent=self,
+                                                icon_path=icon_edit_path,
+                                                stylesheet_normal="background-color: rgba(255, 255, 0, 80);",
+                                                stylesheet_hover="background-color: rgba(255, 255, 0, 140);")
+                    update_button.clicked.connect(
+                        partial(self.update_button_clicked,
+                                id=get_id_for_row(table_widget=self.table_widget,
+                                                row=row)))
+                    button_layout.addWidget(update_button)
             if is_delete:
                 delete_button = ActionButton(icon_path=icon_delete_path,
                                              stylesheet_normal="background-color: rgba(255, 0, 0, 80);",
@@ -839,7 +862,7 @@ class Widget_ReadUpdateDelete(QWidget):
                                                         data=getattr(
                                                             self.obj, column.name, None),
                                                         file_type=FileTypes.PDF_FILE.value,
-                                                        is_upload='dummy string',
+                                                        is_upload=self.callback_update,
                                                         is_download='dummy string')
                 container_layout.addWidget(self.widget_cv_holder)
                 continue
@@ -1237,6 +1260,21 @@ class Widget_Create_MyApplicationForm(QWidget):
         container_widget = QWidget(self)
         container_layout = QVBoxLayout(container_widget)
 
+        is_nullable = ApplicationForm.name.nullable
+        if is_nullable:
+            label_name_text = getColumnTranslation(
+                column=ApplicationForm.name, language=LANGUAGE) + ":"
+        else:
+            label_name_text = getColumnTranslation(
+                column=ApplicationForm.name, language=LANGUAGE) + " (*):"
+        self.label_name = QLabel(parent=self, text=label_name_text)
+        if not is_nullable:
+            self.label_name.setStyleSheet("color: rgb(153, 0, 0)")
+        container_layout.addWidget(self.label_name)
+
+        self.lineEdit_name = QLineEdit()
+        container_layout.addWidget(self.lineEdit_name)
+
         is_nullable = ApplicationForm.cv.nullable
         if is_nullable:
             label_cv_text = getColumnTranslation(
@@ -1308,8 +1346,11 @@ class Widget_Create_MyApplicationForm(QWidget):
 
     def create_button_clicked(self, callback_create):
         cv_bytes_data = self.widget_cv_holder.get_uploaded_data()
-        callback_create(model=ApplicationForm, cv=cv_bytes_data,
-                        candidate_id=self.candidate_id, job_id=self.obj.id)
+        callback_create(model=ApplicationForm,
+                        name=self.lineEdit_name.text(),
+                        cv=cv_bytes_data,
+                        candidate_id=self.candidate_id,
+                        job_id=self.obj.id)
 
     def get_widget_value(self, widget):
         if isinstance(widget, QDateTimeEdit):
@@ -1393,8 +1434,7 @@ class Widget_Create(QWidget):
 
                                 combobox.addItem(str(user.name), instance.id)
                             else:
-                                combobox.addItem(
-                                    str(instance.name), instance.id)
+                                combobox.addItem(str(instance.name), instance.id)
 
                         self.comboboxes[column.name] = combobox
                         container_layout.addWidget(combobox)

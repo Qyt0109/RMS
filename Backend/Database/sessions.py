@@ -14,20 +14,21 @@ db_type = 'mysql'
 db_connector_module = 'pymysql'
 db_host = 'gateway01.ap-northeast-1.prod.aws.tidbcloud.com'
 db_port = '4000'
-db_username = '3xKs6MSRB2UKUd5.root'
+db_username = 'rfsakmS5vnsVjr9.root'
 if platform.system() == "Windows":
     db_ssl_ca_path = 'C:/cer.pem'  # https://letsencrypt.org/certs/isrgrootx1.pem
 else:
     db_ssl_ca_path = '/etc/ssl/cert.pem'
-db_password = db_password
+# db_password = db_password
 
 ECHO = True
-TEST = True
+IS_LOCAL_DATABASE = True
 
-connection_url_string = db_type + db_connector_module + "://" + db_username + ":" + db_password + "@" + \
+connection_url_string = db_type + "+" + db_connector_module + "://" + db_username + ":" + db_password + "@" + \
     db_host + ":" + db_port + "/test?ssl_ca=" + db_ssl_ca_path + \
     "&ssl_verify_cert=true&ssl_verify_identity=true"
-if TEST:
+print(connection_url_string)
+if IS_LOCAL_DATABASE:
     engine = create_engine('sqlite:///Backend/Database/db.sqlite', echo=ECHO)
 else:
     engine = create_engine(connection_url_string, echo=ECHO)

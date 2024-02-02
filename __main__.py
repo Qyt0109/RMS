@@ -423,11 +423,6 @@ class MyApplication(QMainWindow):
     # endregion Candidate
     # region Interviewer
     def renderInterviewer(self):
-        print("Interviewer")
-    # endregion Interviewer
-    # region Job Manager
-
-    def renderJobManager(self):
         """ Sidemenu """
         sidemenu_action_button_setups = [
             [get_translation('candidate'), icon_user_path,
@@ -453,6 +448,35 @@ class MyApplication(QMainWindow):
         ]
         self.renderBase(sidemenu_action_button_setups=sidemenu_action_button_setups,
                         home_action_button_setups=home_action_button_setups)
+    # endregion Interviewer
+    # region Job Manager
+
+    def renderJobManager(self):
+        """ Sidemenu """
+        sidemenu_action_button_setups = [
+            [Candidate.info['description'][LANGUAGE], icon_user_path,
+             self.toPage_JobManager_Candidates],
+            [Job.info['description'][LANGUAGE], icon_job_path,
+                partial(self.toPage_Database_Table, model=Job)],
+            [Interviewer.info['description'][LANGUAGE], icon_interviewer_path,
+                partial(self.toPage_Database_Table, model=Interviewer)],
+            [InterviewerAssignment.info['description'][LANGUAGE], icon_interviewer_asignment_path,
+                partial(self.toPage_JobManager_InterviewerAssginments)],
+        ]
+        """ HOME """
+        home_action_button_setups = [
+            # [f"{get_translation('database')} ({len(all_models)})", icon_database_path, self.toPage_Database],
+            [Candidate.info['description'][LANGUAGE], icon_user_path,
+             self.toPage_JobManager_Candidates],
+            [Job.info['description'][LANGUAGE], icon_job_path,
+                partial(self.toPage_Database_Table, model=Job)],
+            [Interviewer.info['description'][LANGUAGE], icon_interviewer_path,
+                partial(self.toPage_Database_Table, model=Interviewer)],
+            [InterviewerAssignment.info['description'][LANGUAGE], icon_interviewer_asignment_path,
+                partial(self.toPage_JobManager_InterviewerAssginments)],
+        ]
+        self.renderBase(sidemenu_action_button_setups=sidemenu_action_button_setups,
+                        home_action_button_setups=home_action_button_setups)
 
     def getMyInterviewerAssginments(self) -> List[InterviewerAssignment]:
         # Job manager validation
@@ -469,7 +493,7 @@ class MyApplication(QMainWindow):
         my_interviewer_assignments = self.getMyInterviewerAssginments()
         widget_table = Widget_Database_Table_Instances(parent=parent,
                                                        instances=my_interviewer_assignments,
-                                                       model=ApplicationForm,
+                                                       model=InterviewerAssignment,
                                                        my_role=self.logged_in_user.state.role,
                                                        callback_update=self.toPage_Database_Table_Update,
                                                        callback_back=self.toPage_Home,
@@ -489,8 +513,10 @@ class MyApplication(QMainWindow):
             candidates = []
 
         show_candidates = [candidate for candidate in candidates if any(
-            form.application_form_status_id != 3 for form in candidate.application_forms
+            not form.interviewer_assignments and form.application_form_status_id != 3
+            for form in candidate.application_forms
         )]
+
 
         widget_table = Widget_Database_Table_Instances(parent=parent,
                                                        instances=show_candidates,
@@ -524,8 +550,15 @@ class MyApplication(QMainWindow):
         if candidate:
             obj = candidate
         candidate_application_forms = obj.application_forms
+        show_candidate_application_forms = [
+            candidate_application_form
+            for candidate_application_form in candidate_application_forms
+            if not candidate_application_form.interviewer_assignments
+            and candidate_application_form.application_form_status_id != 3
+        ]
+
         widget_table = Widget_Database_Table_Instances(parent=parent,
-                                                       instances=candidate_application_forms,
+                                                       instances=show_candidate_application_forms,
                                                        model=ApplicationForm,
                                                        my_role=self.logged_in_user.state.role,
                                                        callback_back=self.toPage_JobManager_Candidates,

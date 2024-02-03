@@ -47,6 +47,7 @@ class MyApplication(QMainWindow):
         """ Set up the user interface from Designer"""
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        self.setWindowTitle("RMS SYSTEM")
 
         """ Init icons """
         self.init_icons()
@@ -368,7 +369,6 @@ class MyApplication(QMainWindow):
                                                        callback_read=self.toPage_Candidate_ApplicationForms_Read)
         parent_layout.addWidget(widget_table)
 
-
     def toPage_Candidate_ApplicationForms_Create(self, obj, **kwargs):
         self.ui.stackedWidget.setCurrentWidget(self.ui.page_Database)
         parent = self.ui.page_Database
@@ -396,7 +396,7 @@ class MyApplication(QMainWindow):
         QMessageBox.about(self, "UPDATED", get_translation(
             'action completed', language=LANGUAGE))
         self.toPage_Candidate_ApplicationForms()
-    
+
     def createCandidateApplicationForm(self, model=None, **kwargs):
         status, result = CRUD_ApplicationForm.create(**kwargs)
         if status != CRUD_Status.CREATED:
@@ -430,7 +430,7 @@ class MyApplication(QMainWindow):
             [Job.info['description'][LANGUAGE], icon_job_path,
                 partial(self.toPage_Database_Table, model=Job)],
             [InterviewerAssignment.info['description'][LANGUAGE], icon_interviewer_asignment_path,
-                partial(self.toPage_Interviewer_InterviewerAssignment)],
+                partial(self.toPage_Interviewer_InterviewerAssignments)],
         ]
         """ HOME """
         home_action_button_setups = [
@@ -439,26 +439,60 @@ class MyApplication(QMainWindow):
             [Job.info['description'][LANGUAGE], icon_job_path,
                 partial(self.toPage_Database_Table, model=Job)],
             [InterviewerAssignment.info['description'][LANGUAGE], icon_interviewer_asignment_path,
-                partial(self.toPage_Interviewer_InterviewerAssignment)],
+                partial(self.toPage_Interviewer_InterviewerAssignments)],
         ]
         self.renderBase(sidemenu_action_button_setups=sidemenu_action_button_setups,
                         home_action_button_setups=home_action_button_setups)
-        
-    def toPage_Interviewer_InterviewerAssignment(self, **kwargs):
+
+    def toPage_Interviewer_InterviewerAssignments(self, **kwargs):
         self.ui.stackedWidget.setCurrentWidget(self.ui.page_Database)
         parent = self.ui.page_Database
         parent_layout = parent.layout()
         clearAllWidgets(parent)
-        my_interviewer_assignments = self.getMyInterviewerAssginments_JobManager()
+        my_interviewer_assignments = self.getMyInterviewerAssginments()
         widget_table = Widget_Database_Table_Instances(parent=parent,
                                                        instances=my_interviewer_assignments,
                                                        model=InterviewerAssignment,
                                                        my_role=self.logged_in_user.state.role,
-                                                       callback_update=self.toPage_Database_Table_Update,
-                                                       callback_back=self.toPage_Home,
-                                                       callback_create=self.toPage_Candidate_ApplicationForms_Create,
-                                                       callback_read=self.toPage_Candidate_ApplicationForms_Read)
+                                                       callback_update=self.toPage_Interviewer_InterviewerAssignments_Update,
+                                                       callback_back=self.toPage_Home)
         parent_layout.addWidget(widget_table)
+
+    def toPage_Interviewer_InterviewerAssignments_Update(self, obj:InterviewerAssignment, **kwargs):
+        self.ui.stackedWidget.setCurrentWidget(self.ui.page_Database)
+        parent = self.ui.page_Database
+        parent_layout = parent.layout()
+        clearAllWidgets(parent)
+        widget_update = Widget_Interviewer_InterviewerAssignments_Update(parent=parent,
+                                                obj=obj,
+                                                my_role=self.logged_in_user.state.role,
+                                                callback_back=self.toPage_Interviewer_InterviewerAssignments,
+                                                callback_cancel=self.toPage_Interviewer_InterviewerAssignments,
+                                                callback_update=self.fromPage_Interviewer_InterviewerAssignments_Update)
+
+        parent_layout.addWidget(widget_update)
+    
+    def fromPage_Interviewer_InterviewerAssignments_Update(self, obj:InterviewerAssignment, application_form_status_id, **kwargs):
+        is_good = True
+        status, result = CRUD_InterviewerAssignment.update(id=obj.id,
+                                                           **kwargs)
+        print(status, result)
+        if status != CRUD_Status.UPDATED:
+            is_good = False
+
+        status, result = CRUD_ApplicationForm.update(id=obj.application_form_id,
+                                                           application_form_status_id=application_form_status_id)
+        print(status, result)
+        if status != CRUD_Status.UPDATED:
+            is_good = False
+
+        if is_good == False:
+            QMessageBox.warning(self, "FAILED TO UPDATE", get_translation(
+                'action failed', language=LANGUAGE))
+            return
+        QMessageBox.about(self, "UPDATED", get_translation(
+            'action completed', language=LANGUAGE))
+        self.toPage_Interviewer_InterviewerAssignments()
 
     # endregion Interviewer
     # region Job Manager
@@ -490,10 +524,7 @@ class MyApplication(QMainWindow):
         self.renderBase(sidemenu_action_button_setups=sidemenu_action_button_setups,
                         home_action_button_setups=home_action_button_setups)
 
-    def getMyInterviewerAssginments_JobManager(self) -> List[InterviewerAssignment]:
-        # Job manager validation
-        if self.logged_in_user.state.role != RoleStates.JOB_MANAGER.name:
-            return
+    def getMyInterviewerAssginments(self) -> List[InterviewerAssignment]:
         interviewer_assignments = self.logged_in_user.state.interviewer_assignments
         return interviewer_assignments
 
@@ -502,7 +533,7 @@ class MyApplication(QMainWindow):
         parent = self.ui.page_Database
         parent_layout = parent.layout()
         clearAllWidgets(parent)
-        my_interviewer_assignments = self.getMyInterviewerAssginments_JobManager()
+        my_interviewer_assignments = self.getMyInterviewerAssginments()
         widget_table = Widget_Database_Table_Instances(parent=parent,
                                                        instances=my_interviewer_assignments,
                                                        model=InterviewerAssignment,
@@ -513,8 +544,6 @@ class MyApplication(QMainWindow):
                                                        # callback_create=self.toPage_Candidate_ApplicationForms_Create,
                                                        callback_read=self.toPage_Candidate_ApplicationForms_Read)
         parent_layout.addWidget(widget_table)
-
-    
 
     def toPage_JobManager_InterviewerAssginments_Update(self, obj, model=None, **kwargs):
         self.ui.stackedWidget.setCurrentWidget(self.ui.page_Database)
@@ -531,7 +560,7 @@ class MyApplication(QMainWindow):
                                                 callback_delete=self.fromPage_JobManager_InterviewerAssginments_Delete)
 
         parent_layout.addWidget(widget_update)
-    
+
     def fromPage_JobManager_InterviewerAssginments_Update(self, obj, **kwargs):
         model = type(obj)
         CRUD_Model = get_crud_class(model_class=model)
@@ -558,8 +587,6 @@ class MyApplication(QMainWindow):
         QMessageBox.about(self, "DELETED", get_translation(
             'action completed', language=LANGUAGE))
         self.toPage_JobManager_InterviewerAssginments()
-        
-
 
     def toPage_JobManager_Candidates(self, **kwargs):
         self.ui.stackedWidget.setCurrentWidget(self.ui.page_Database)
@@ -576,7 +603,6 @@ class MyApplication(QMainWindow):
             not form.interviewer_assignments and form.application_form_status_id != 3
             for form in candidate.application_forms
         )]
-
 
         widget_table = Widget_Database_Table_Instances(parent=parent,
                                                        instances=show_candidates,
@@ -654,7 +680,7 @@ class MyApplication(QMainWindow):
 
     def toPage_JobManager_Candidate_ApplicationForms_Select(self, obj: ApplicationForm, **kwargs):
         selected_application_form = obj
-        my_interviewer_assignments = self.getMyInterviewerAssginments_JobManager()
+        my_interviewer_assignments = self.getMyInterviewerAssginments()
         found_interviewer_assignment = None
         for my_interviewer_assignment in my_interviewer_assignments:
             if (my_interviewer_assignment.application_form == selected_application_form):

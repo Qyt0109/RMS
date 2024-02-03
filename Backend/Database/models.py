@@ -576,12 +576,14 @@ class InterviewerAssignment(Base, ReprAble):
             'read':
             [
                 RoleStates.ADMIN.name,
-                RoleStates.JOB_MANAGER.name
+                RoleStates.JOB_MANAGER.name,
+                # RoleStates.INTERVIEWER.name
             ],
             'update':
             [
                 RoleStates.ADMIN.name,
-                RoleStates.JOB_MANAGER.name
+                RoleStates.JOB_MANAGER.name,
+                RoleStates.INTERVIEWER.name
             ],
             'delete':
             [
@@ -627,6 +629,7 @@ class InterviewerAssignment(Base, ReprAble):
         [
                       RoleStates.ADMIN.name,
                       # RoleStates.JOB_MANAGER.name,
+                      RoleStates.INTERVIEWER.name
                   ]})
     # n-1 Relationships
     interviewer_id = Column(Integer, ForeignKey('interviewers.id'),

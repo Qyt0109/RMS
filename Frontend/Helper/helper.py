@@ -781,6 +781,355 @@ class Widget_Database_Table_Instances(QWidget):
             return
         self.callback_create(model=self.model)
 
+class Widget_Interviewer_InterviewerAssignments_Update(QWidget):
+    def __init__(self,
+                 parent: QWidget,
+                 obj: InterviewerAssignment,
+                 my_role,
+                 callback_back=None,
+                 callback_cancel=None,
+                 callback_update=None) -> None:
+        super().__init__(parent)
+        self.callback_back = callback_back
+        self.callback_cancel = callback_cancel
+        self.callback_update = callback_update
+        layout = QVBoxLayout(self)
+        # layout.setContentsMargins(0, 0, 0, 0)
+        self.layout = layout
+        self.obj = obj
+        self.model = InterviewerAssignment
+        self.line_edits = {}
+        self.comboboxes = {}
+        frame_buttons = QFrame(self)
+        frame_buttons_layout = QHBoxLayout(frame_buttons)
+        # Set layout alignment to the left
+        frame_buttons_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        pushButton_Back = ActionButton(
+            parent=self, text=get_translation(key='back'))
+        pushButton_Back.clicked.connect(partial(self.back_button_clicked))
+        frame_buttons_layout.addWidget(pushButton_Back)
+        self.layout.addWidget(frame_buttons)
+        # Create a scrollable widget
+        scrollable_widget = QScrollArea(self)
+        scrollable_widget.setWidgetResizable(True)
+        # Create a container widget to hold the layout
+        container_widget = QWidget(self)
+        container_layout = QVBoxLayout(container_widget)
+
+        hide_columns = ['interviewer_id', 'job_manager_id']
+        # Get the mapped class and its properties using inspect
+        mapper = inspect(self.model)
+        for column in mapper.columns:
+            # Skip the PK 'id' column or any other columns you want to exclude
+            if column.primary_key:
+                continue
+            # Skip 'hide' column
+            if isThisColumnHideToMe(column=column, my_role=my_role):
+                continue
+            if column.name in hide_columns:
+                continue
+            # Get translated description of the column
+            description = getColumnTranslation(
+                column=column, language=LANGUAGE)
+            if column.nullable or not callback_update:
+                label_name = QLabel(f"{description}:", parent=self)
+            else:
+                label_name = QLabel(f"{description} (*):", parent=self)
+                label_name.setStyleSheet("color: rgb(153, 0, 0)")
+
+            container_layout.addWidget(label_name)
+            # Updateable column ?
+            is_not_updateable = not isUpdateableToMe(
+                column=column, my_role=my_role) or not callback_update
+
+            # Check if the column is a File column
+            file_type = getColumnFileType(column=column)
+            if file_type == FileTypes.PDF_FILE.value:
+                self.widget_cv_holder = Widget_FilePath(parent=self,
+                                                        data=getattr(
+                                                            self.obj, column.name, None),
+                                                        file_type=FileTypes.PDF_FILE.value,
+                                                        is_upload=self.callback_update,
+                                                        is_download='dummy string')
+                container_layout.addWidget(self.widget_cv_holder)
+                continue
+
+            if is_not_updateable:
+                if column.foreign_keys:
+                    # Get the class of the related model
+                    related_model_class = list(column.foreign_keys)[
+                        0].column.table
+                    # Get the foreign key value
+                    foreign_key_value = getattr(self.obj, column.name, None)
+
+                    # Fetch the corresponding instance using the foreign key value
+                    instance = session.query(related_model_class).filter_by(
+                        id=foreign_key_value).first()
+                    if str(related_model_class) in ['interviewers', 'job_managers', 'candidates', 'admins']:
+                        status, user = CRUD_User.read(id=instance.id)
+                        label_value_text = str(user.name)
+                    else:
+                        label_value_text = str(
+                            instance.name) if instance else ''
+                else:
+                    attr = getattr(self.obj, column.name, None)
+                    label_value_text = str(attr) if attr else ''
+                label_value = QLabel(label_value_text)
+                label_value.setStyleSheet(
+                    "background-color:rgba(0, 0, 153, 30); padding: 5px 5px 5px 5ps;")
+                container_layout.addWidget(label_value)
+                # self.labels[column.name] = label_value
+                continue
+
+            # Check if the column is a Date column
+            if column.type.python_type is datetime.date:
+                date_edit = QDateEdit(self)
+                date_value = getattr(self.obj, column.name, None)
+                if date_value:
+                    date_edit.setDate(
+                        QDate(date_value.year, date_value.month, date_value.day))
+                date_edit.setDisabled(is_not_updateable)
+                self.line_edits[column.name] = date_edit
+                container_layout.addWidget(date_edit)
+
+            # Check if the column is a Datetime column
+            elif column.type.python_type is datetime.datetime:
+                datetime_picker = QDateTimeEdit(self)
+                datetime_value = getattr(self.obj, column.name, None)
+                if datetime_value:
+                    datetime_picker.setDateTime(QDateTime(datetime_value))
+                datetime_picker.setDisabled(is_not_updateable)
+                self.line_edits[column.name] = datetime_picker
+                container_layout.addWidget(datetime_picker)
+            else:
+                # Check if the column is a foreign key
+                if column.foreign_keys:
+                    combobox = QComboBox(self)
+                    # Add a "None" option as the first item
+                    combobox.addItem("None", None)
+                    # Get the class of the related model
+                    related_model = list(column.foreign_keys)[0].column.table
+                    # Get the foreign key value
+                    foreign_key_value = getattr(self.obj, column.name, None)
+
+                    # Fetch the corresponding instance using the foreign key value
+                    related_instances = session.query(related_model).all()
+                    for instance in related_instances:
+                        if str(related_model) in ['interviewers', 'job_managers', 'candidates', 'admins']:
+                            status, user = CRUD_User.read(id=instance.id)
+                            item_text = str(user.name)
+                        else:
+                            item_text = str(instance.name)
+                        combobox.addItem(item_text, instance.id)
+
+                    current_value = getattr(self.obj, column.name, None)
+                    index = combobox.findData(current_value)
+                    combobox.setCurrentIndex(index)
+
+                    self.comboboxes[column.name] = combobox
+                    container_layout.addWidget(combobox)
+                else:
+                    attr = getattr(self.obj, column.name)
+                    if attr:
+                        item_text = str(attr)
+                    else:
+                        item_text = ''
+
+                    line_edit_input = QLineEdit(item_text, parent=self)
+                    # Enable clear button for QLineEdit
+                    line_edit_input.setClearButtonEnabled(True)
+                    line_edit_input.setDisabled(is_not_updateable)
+                    self.line_edits[column.name] = line_edit_input
+                    container_layout.addWidget(line_edit_input)
+        
+        container_layout.addWidget(QLabel(parent=self, text=getModelDescription(ApplicationFormStatus, LANGUAGE) + ":"))
+        
+        combobox_application_status = QComboBox(self)
+        combobox_application_status.addItem("None", None)
+        status, application_statuses = CRUD_ApplicationFormStatus.read_all()
+        for application_status in application_statuses:
+            combobox_application_status.addItem(application_status.name, application_status.id)
+        current_value = self.obj.application_form.application_form_status.id if self.obj.application_form.application_form_status else "None"
+        index = combobox_application_status.findData(current_value)
+        if index == -1:
+            index = 0
+        combobox_application_status.setCurrentIndex(index)
+        self.combobox_application_status = combobox_application_status
+        container_layout.addWidget(self.combobox_application_status)
+
+        self.button_view_application_form = ActionButton(self, "View Application Form")
+        self.button_view_application_form.clicked.connect(self.button_view_application_form_clicked)
+        container_layout.addWidget(self.button_view_application_form)
+
+        spacer_widget = QWidget(parent=self)
+        spacer_widget.setSizePolicy(QSizePolicy.Policy.Expanding,
+                                    QSizePolicy.Policy.Expanding)
+        container_layout.addWidget(spacer_widget)
+        # Set the container widget as the content of the scrollable widget
+        scrollable_widget.setWidget(container_widget)
+        self.layout.addWidget(scrollable_widget)
+        # Frame for action buttons
+        frame_buttons = QFrame(self)
+        frame_buttons_layout = QHBoxLayout(frame_buttons)
+
+        # Update mode
+        if callback_update:
+            update_button = ActionButton(self, get_translation('update'))
+            update_button.clicked.connect(partial(self.update_button_clicked))
+            frame_buttons_layout.addWidget(update_button)
+            cancel_button = ActionButton(self, get_translation('cancel'))
+            cancel_button.clicked.connect(partial(self.cancel_button_clicked))
+            frame_buttons_layout.addWidget(cancel_button)
+        self.layout.addWidget(frame_buttons)
+        self.setLayout(self.layout)
+
+    def button_view_application_form_clicked(self):
+        popup_application_form = Popup_ApplicationForm(obj=self.obj.application_form)
+        popup_application_form.exec()
+
+    def back_button_clicked(self):
+        if not self.callback_back:
+            return
+        self.callback_back(model=self.model, obj=self.obj)
+
+    def cancel_button_clicked(self):
+        if self.callback_cancel:
+            self.callback_cancel(model=self.model)
+
+    def update_button_clicked(self):
+        if not self.callback_update:
+            return
+
+        # Update the model object with user input
+        for name, line_edit in self.line_edits.items():
+            setattr(self.obj, name, line_edit.text()
+                    if line_edit.text() != '' else None)
+
+        # Set foreign key values
+        for column_name, combobox in self.comboboxes.items():
+            selected_instance_id = combobox.currentData()
+            setattr(self.obj, column_name, selected_instance_id)
+
+        model_values = {
+            name: self.get_widget_value(widget) for name, widget in self.line_edits.items()
+        }
+
+        application_form_status_id = self.combobox_application_status.currentData()
+        self.callback_update(obj=self.obj, application_form_status_id=application_form_status_id, **model_values)
+
+    def get_widget_value(self, widget):
+        if isinstance(widget, QDateTimeEdit):
+            return widget.dateTime().toPyDateTime() if widget.dateTime().isValid() else None
+        else:
+            return widget.text() if widget.text() != '' else None
+
+class Popup_ApplicationForm(QDialog):
+    def __init__(self, obj:ApplicationForm):
+        super().__init__()
+        self.setWindowTitle(obj.name)
+        self.setMinimumWidth(420)
+        self.layout = QHBoxLayout()
+
+        widget_read_candidate = Widget_Read(parent=self,
+                                              obj=obj.candidate,
+                                              model=Candidate,
+                                              my_role=RoleStates.CANDIDATE.name)
+        self.layout.addWidget(widget_read_candidate)
+
+        widget_read_application_form = Widget_Read(parent=self,
+                                              obj=obj,
+                                              model=ApplicationForm,
+                                              my_role=RoleStates.CANDIDATE.name)
+        self.layout.addWidget(widget_read_application_form)
+        self.layout.setContentsMargins(20, 20, 20, 20)
+        self.setLayout(self.layout)
+
+class Widget_Read(QWidget):
+    def __init__(self,
+                 parent: QWidget,
+                 obj: Base,
+                 model,
+                 my_role=None) -> None:
+        super().__init__(parent)
+        self.layout = QVBoxLayout(self)
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setSpacing(0)
+        self.obj = obj
+        self.model = model
+
+        label = QLabel(parent=self, text=getModelDescription(model=model, language=LANGUAGE))
+        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        label.setStyleSheet("background-color:rgba(0, 0, 180, 120)")
+        self.layout.addWidget(label)
+
+        scrollable_widget = QScrollArea(self)
+        scrollable_widget.setWidgetResizable(True)
+        # Create a container widget to hold the layout
+        container_widget = QWidget(self)
+        container_layout = QVBoxLayout(container_widget)
+
+        hide_columns = ['password_hash', 'username']
+        # Get the mapped class and its properties using inspect
+        mapper = inspect(self.model)
+        for column in mapper.columns:
+            # Skip the PK 'id' column or any other columns you want to exclude
+            if column.primary_key:
+                continue
+            # Skip 'hide' column
+            if isThisColumnHideToMe(column=column, my_role=my_role):
+                continue
+            if column.name in hide_columns:
+                continue
+            # Get translated description of the column
+            description = getColumnTranslation(
+                column=column, language=LANGUAGE)
+            label_name = QLabel(f"{description}:", parent=self)
+
+            container_layout.addWidget(label_name)
+
+            # Check if the column is a File column
+            file_type = getColumnFileType(column=column)
+            if file_type == FileTypes.PDF_FILE.value:
+                self.widget_cv_holder = Widget_FilePath(parent=self,
+                                                        data=getattr(
+                                                            self.obj, column.name, None),
+                                                        file_type=FileTypes.PDF_FILE.value,
+                                                        is_download='dummy string')
+                container_layout.addWidget(self.widget_cv_holder)
+                continue
+
+            if column.foreign_keys:
+                # Get the class of the related model
+                related_model_class = list(column.foreign_keys)[
+                    0].column.table
+                # Get the foreign key value
+                foreign_key_value = getattr(self.obj, column.name, None)
+
+                # Fetch the corresponding instance using the foreign key value
+                instance = session.query(related_model_class).filter_by(
+                    id=foreign_key_value).first()
+                if str(related_model_class) in ['interviewers', 'job_managers', 'candidates', 'admins']:
+                    status, user = CRUD_User.read(id=instance.id)
+                    label_value_text = str(user.name)
+                else:
+                    label_value_text = str(
+                        instance.name) if instance else ''
+            else:
+                attr = getattr(self.obj, column.name, None)
+                label_value_text = str(attr) if attr else ''
+            label_value = QLabel(label_value_text)
+            label_value.setStyleSheet(
+                "background-color:rgba(0, 0, 153, 30); padding: 5px 5px 5px 5ps;")
+            container_layout.addWidget(label_value)
+            # self.labels[column.name] = label_value
+
+        spacer_widget = QWidget(parent=self)
+        spacer_widget.setSizePolicy(QSizePolicy.Policy.Expanding,
+                                    QSizePolicy.Policy.Expanding)
+        container_layout.addWidget(spacer_widget)
+        # Set the container widget as the content of the scrollable widget
+        scrollable_widget.setWidget(container_widget)
+        self.layout.addWidget(scrollable_widget)
 
 class Widget_ReadUpdateDelete(QWidget):
     """
@@ -817,10 +1166,11 @@ class Widget_ReadUpdateDelete(QWidget):
         frame_buttons_layout = QHBoxLayout(frame_buttons)
         # Set layout alignment to the left
         frame_buttons_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        pushButton_Back = ActionButton(
-            parent=self, text=get_translation(key='back'))
-        pushButton_Back.clicked.connect(partial(self.back_button_clicked))
-        frame_buttons_layout.addWidget(pushButton_Back)
+        if self.callback_back:
+            pushButton_Back = ActionButton(
+                parent=self, text=get_translation(key='back'))
+            pushButton_Back.clicked.connect(partial(self.back_button_clicked))
+            frame_buttons_layout.addWidget(pushButton_Back)
         self.layout.addWidget(frame_buttons)
         # Create a scrollable widget
         scrollable_widget = QScrollArea(self)
